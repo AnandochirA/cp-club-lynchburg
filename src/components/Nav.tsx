@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import { club, nav } from '@/lib/content';
 import logo from '@/assets/logo.png';
+import { NavAuth } from './NavAuth';
 
 export function Nav() {
   return (
@@ -30,14 +31,7 @@ export function Nav() {
         </ul>
       </nav>
 
-      <a
-        href="#join"
-        className="btn btn-primary flex h-11 shrink-0 items-center justify-center rounded-xl px-4.5 text-[15px] font-semibold text-white no-underline hover:text-white lg:px-5"
-      >
-        <span className="sheen" aria-hidden="true" />
-        <span className="lg:hidden">Join</span>
-        <span className="hidden lg:inline">Join the Club</span>
-      </a>
+      <NavAuth />
     </header>
   );
 }

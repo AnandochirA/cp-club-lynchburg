@@ -22,12 +22,12 @@ export const nav = [
 ];
 
 export const hero = {
-  pill: { tag: 'new club', text: 'Weekly study room · free pizza', href: '#events' },
+  pill: { tag: 'new club', text: 'Study room coming soon', href: '#events' },
   line1: 'Get interview-ready.',
   line2: 'Have fun doing it.',
   sub: 'Competitive Programming Club at University of Lynchburg. Solve puzzles, compete in contests, and build the problem-solving skills top tech companies hire for.',
   subStrong: 'No experience needed.',
-  primaryCta: 'Join the Club',
+  primaryCta: 'Sign up',
   secondaryCta: 'See Upcoming Events',
   /** The code that types itself out in the hero editor. */
   file: 'two_sum.py',
@@ -39,8 +39,8 @@ export const ticker = [
   'No experience needed',
   'Every major welcome',
   'Free to join',
-  'Free pizza at events',
   'Any language to start',
+  'Track every solve',
   'Interview prep',
   'Weekly contests',
   'Come when you can',
@@ -68,7 +68,7 @@ export const why = {
     {
       icon: 'users' as const,
       title: 'Find your people',
-      body: 'A community that loves hard problems. Plus free food at events.',
+      body: 'A community that loves hard problems, and people to solve them with.',
     },
   ],
 };
@@ -221,7 +221,7 @@ export const rankSection = {
       name: 'Beginner Track',
       range: 'Guardian → Archon',
       body: 'Just finished intro programming? Start here. We teach the core ideas step by step.',
-      cta: 'Join as a beginner',
+      cta: 'Sign up as a beginner',
       color: '#F2A866',
     },
     {
@@ -229,7 +229,7 @@ export const rankSection = {
       name: 'Competitive Track',
       range: 'Legend → Divine',
       body: 'Already comfortable with data structures? Test into Legend or Ancient and go after the Hards.',
-      cta: 'Join the competitive track',
+      cta: 'Sign up for the competitive track',
       color: '#F6C453',
     },
   ],
@@ -276,12 +276,14 @@ export const events = {
     pill: 'Weekly',
     title: 'Study room',
     body: 'Drop in, solve problems side by side, and compete with whoever’s in the room.',
-    meta: [
-      { icon: 'trophy' as const, text: 'Leaderboard tracks progress' },
-      { icon: 'pizza' as const, text: 'Free pizza', highlight: true },
-    ],
+    /** Facts about the event. `highlight` gives a row the brighter treatment. */
+    meta: [{ icon: 'trophy', text: 'Leaderboard tracks progress' }] as {
+      icon: 'pin' | 'chat' | 'trophy' | 'pizza';
+      text: string;
+      highlight?: boolean;
+    }[],
     quiz: { text: 'Placement + find your rank', hint: '4 problems · 90 min' },
-    primaryCta: 'Join the Club',
+    primaryCta: 'Sign up',
   },
   /** Extra events beside the study room. Empty hides the column; the study room goes full width. */
   upcoming: [] as UpcomingEvent[],
@@ -328,7 +330,7 @@ export const faq: [string, string][] = [
     'Guardian starts with Python. After that, use whatever you’re fastest in. C++ and Python are the most common.',
   ],
   ['How much time does it take?', 'About ten problems a week. There’s no attendance requirement.'],
-  ['Does it cost anything?', 'No. It’s free, and so is the food at events.'],
+  ['Does it cost anything?', 'No. It’s free.'],
 ];
 
 /* ----------------------------------------------------------- leadership */
@@ -345,9 +347,9 @@ export const leadership = {
 /* ----------------------------------------------------------------- join */
 
 export const join = {
-  eyebrow: 'join',
-  title: 'Join the club.',
-  sub: 'Five quick questions and you’re in.',
+  eyebrow: 'sign up',
+  title: 'Create your account',
+  sub: 'A few quick questions, then link your LeetCode account.',
   subNowrap: 'No experience needed.',
   fields: {
     name: { label: 'Name', placeholder: 'First and last name' },
@@ -369,20 +371,27 @@ export const join = {
       ],
     },
   },
-  submit: 'Join the Club',
-  submitting: 'Sending…',
+  submit: 'Create account',
+  submitting: 'Creating your account…',
+  haveAccount: 'Already have an account?',
+  signIn: 'Sign in',
   fineprint:
-    'No commitment. Just club updates, no spam. If you link LeetCode, we store only your username and which problems you’ve solved, and you can delete them any time.',
+    'No commitment. If you link LeetCode, we store only your username and which problems you’ve solved, and you can delete them any time.',
   success: {
-    title: 'You’re in.',
-    sub: 'Here’s what happens next.',
+    title: 'Account created.',
+    sub: 'Two more steps and you’re on the ladder.',
     steps: [
       'Link your LeetCode account',
       'Take the placement and get your rank',
-      'Watch your inbox for study room details',
+      'Solve your rank’s problems and level up',
     ],
-    roadmap: 'Open my roadmap',
+    roadmap: 'Continue setup',
     back: 'Edit my answers',
+  },
+  /** That email was already signed up. We never say whether it is linked yet. */
+  existing: {
+    title: 'You’re already signed up.',
+    sub: 'Pick up where you left off: link your LeetCode account, or sign in if you already did.',
   },
   errors: {
     generic: 'Something went wrong on our side. Please try again in a moment.',
@@ -391,10 +400,25 @@ export const join = {
   },
 };
 
+/** Sign in / sign up chrome: the header buttons, the sign-in page, the step indicator. */
+export const auth = {
+  nav: { signIn: 'Sign in', signUp: 'Sign up', account: 'My progress' },
+  signIn: {
+    title: 'Sign in',
+    sub: 'Verify your LeetCode account to continue. There’s no password to remember.',
+    newHere: 'New here?',
+    createAccount: 'Create an account',
+    back: '← Back to the club site',
+  },
+  /** The three steps of setting up an account. */
+  steps: ['Account', 'LeetCode', 'Placement'],
+};
+
 export const footer = {
   line: `A student organization at ${club.school}.`,
   links: [
-    { href: '#join', label: 'Join' },
+    { href: '#join', label: 'Sign up' },
+    { href: '/signin', label: 'Sign in' },
     { href: '/me', label: 'My progress' },
     { href: '#faq', label: 'FAQ' },
     { href: '#top', label: 'Back to top' },
@@ -420,6 +444,8 @@ export const apiErrors: Record<string, string> = {
   code_not_found:
     'We couldn’t find the code in your About me yet. Save your profile on LeetCode, then press Verify again.',
   user_not_found: 'We couldn’t find that LeetCode account. Check the spelling of your username.',
+  no_account:
+    'We couldn’t find an account for that LeetCode username. Create one first, it only takes a minute.',
   expired: 'That code has expired. Start again to get a new one.',
   too_many_attempts: 'Too many tries with that code. Start again to get a new one.',
   already_used: 'That code was already used. Start again to get a new one.',
@@ -471,7 +497,8 @@ export const roadmap = {
     done: { title: 'You’re linked.', sub: 'You can remove the code from your About me now.' },
     privacy:
       'We store your LeetCode username and which of our problems you’ve solved. You can delete both any time from your profile page.',
-    returning: 'Signed up before? Use the same steps to sign back in.',
+    returning: 'Already have an account?',
+    returningLink: 'Sign in',
   },
   placement: {
     title: 'Find your rank',
@@ -514,10 +541,6 @@ export const roadmap = {
 
 export const memberPage = {
   title: 'My progress',
-  signedOut: {
-    title: 'Sign in with LeetCode',
-    sub: 'Prove you own your LeetCode account and we’ll show your progress. No password needed.',
-  },
   rank: 'Rank',
   next: 'Next',
   inRank: (solved: number, total: number, next: string | null) =>

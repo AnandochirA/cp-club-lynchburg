@@ -11,7 +11,13 @@ export const dynamic = 'force-dynamic';
 
 const MAX_ATTEMPTS = 5;
 
-type Challenge = { id: string; username: string; code_hash: string; claim_hash: string | null };
+type Challenge = {
+  id: string;
+  username: string;
+  code_hash: string;
+  claim_hash: string | null;
+  intent: 'signup' | 'signin';
+};
 
 /**
  * Step 2: read the account's public About me and look for OUR code in it.
@@ -35,7 +41,7 @@ export async function POST(req: Request) {
     const claimed = (await sql`
       update link_challenges set attempts = attempts + 1
       where id = ${challengeId} and used_at is null and expires_at > now() and attempts < ${MAX_ATTEMPTS}
-      returning id, username, code_hash, claim_hash
+      returning id, username, code_hash, claim_hash, intent
     `) as Challenge[];
     if (claimed.length === 0) {
       const known = (await sql`
@@ -62,6 +68,16 @@ export async function POST(req: Request) {
     if (!profile) return NextResponse.json({ error: 'user_not_found' }, { status: 404 });
     if (!aboutMeHasCode(profile.aboutMe, challenge.code_hash)) {
       return NextResponse.json({ error: 'code_not_found' }, { status: 422 });
+    }
+
+    // Signing IN never creates an account. Ownership is proven by now, so it is
+    // safe to say "no account": only the real owner of that LeetCode username
+    // can learn this, which avoids leaking who is a member.
+    if (challenge.intent === 'signin') {
+      const exists = await sql`
+        select 1 from members where lower(leetcode_username) = lower(${profile.username})
+      `;
+      if (exists.length === 0) return NextResponse.json({ error: 'no_account' }, { status: 404 });
     }
 
     // Burn the challenge. If two requests race, only one gets a row back.

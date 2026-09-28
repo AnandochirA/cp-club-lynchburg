@@ -25,6 +25,8 @@ export async function POST(req: Request) {
   const username = str(body.username, 60);
   if (!USERNAME_RE.test(username)) return NextResponse.json({ error: 'bad_username' }, { status: 400 });
   const claim = str(body.claim, 200);
+  // Signing up creates the account once the code checks out. Signing in never does.
+  const intent = body.intent === 'signin' ? 'signin' : 'signup';
 
   try {
     const sql = db();
@@ -50,8 +52,8 @@ export async function POST(req: Request) {
     const id = randomToken(16);
     const code = makeCode();
     await sql`
-      insert into link_challenges (id, username, code_hash, claim_hash, expires_at)
-      values (${id}, ${username}, ${hashToken(code)}, ${claimHash}, now() + interval '15 minutes')
+      insert into link_challenges (id, username, code_hash, claim_hash, intent, expires_at)
+      values (${id}, ${username}, ${hashToken(code)}, ${claimHash}, ${intent}, now() + interval '15 minutes')
     `;
     return NextResponse.json({ challengeId: id, code, expiresInSeconds: 15 * 60 });
   } catch (err) {

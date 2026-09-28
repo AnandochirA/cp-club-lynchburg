@@ -7,7 +7,6 @@ import { curriculum, type RankKey } from '@/lib/curriculum';
 import { apiDelete, apiPost } from '@/lib/client-api';
 import type { MemberView } from '@/lib/member-view';
 import { Icon } from './icons';
-import { LinkLeetCode } from './LinkLeetCode';
 import { PlacementPanel } from './PlacementPanel';
 import { RankBadge, SKIN } from './RankBadge';
 
@@ -16,20 +15,6 @@ const SHOW = 12;
 
 const diffColor = (d: string) =>
   rankSection.difficulties.find((x) => x.label === d.toLowerCase())?.color ?? '#A7A8AA';
-
-/** The signed-out view: prove you own your LeetCode account to see your progress. */
-export function MeSignIn() {
-  const router = useRouter();
-  return (
-    <div className="card-d flex flex-col gap-4 rounded-[22px] p-5 lg:p-8">
-      <h2 className="font-display m-0 text-[28px] leading-[1.1] font-extrabold lg:text-[34px]">
-        {M.signedOut.title}
-      </h2>
-      <p className="m-0 text-[15.5px] leading-[1.5] text-muted">{M.signedOut.sub}</p>
-      <LinkLeetCode onLinked={() => router.refresh()} />
-    </div>
-  );
-}
 
 export function MemberDashboard({ initial }: { initial: MemberView }) {
   const router = useRouter();

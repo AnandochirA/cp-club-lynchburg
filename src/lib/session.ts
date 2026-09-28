@@ -5,6 +5,8 @@ import { hashToken, randomToken } from '@/lib/verify-code';
 import type { RankKey } from '@/lib/curriculum';
 
 const COOKIE = 'cp_session';
+/** Non-sensitive companion cookie read by the header. See createSession. */
+export const HINT_COOKIE = 'cp_in';
 const DAYS = 30;
 
 export type MemberRow = {
@@ -39,14 +41,18 @@ export async function createSession(memberId: number): Promise<void> {
     values (${hashToken(token)}, ${memberId}, now() + ${`${DAYS} days`}::interval)
   `;
   const jar = await cookies();
-  jar.set(COOKIE, token, {
-    httpOnly: true,
-    sameSite: 'lax',
+  const base = {
+    sameSite: 'lax' as const,
     // http://localhost has no TLS, so a secure-only cookie would never be sent in dev.
     secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: DAYS * 24 * 60 * 60,
-  });
+  };
+  jar.set(COOKIE, token, { ...base, httpOnly: true });
+  // A readable "someone is signed in" hint so the header can say "My progress"
+  // instead of "Sign in" without a network request. It carries no identity and
+  // grants nothing; the real check is always the httpOnly cookie above.
+  jar.set(HINT_COOKIE, '1', { ...base, httpOnly: false });
 }
 
 export async function getSession(): Promise<Session | null> {
@@ -72,4 +78,5 @@ export async function destroySession(): Promise<void> {
     await sql`delete from sessions where token_hash = ${hashToken(token)}`;
   }
   jar.delete(COOKIE);
+  jar.delete(HINT_COOKIE);
 }

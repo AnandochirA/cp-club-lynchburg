@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { ladder, ranks, roadmap } from '@/lib/content';
+import { auth, ladder, ranks, roadmap } from '@/lib/content';
 import { IS_PREVIEW } from '@/lib/client-api';
 import { Icon } from './icons';
 import { LinkLeetCode } from './LinkLeetCode';
@@ -13,6 +13,35 @@ const R = roadmap;
 const SURFACE = '#101116';
 
 type Step = 'roadmap' | 'link' | 'placement';
+
+/** Where they are in setting up an account: Account (done) -> LeetCode -> Placement. */
+function Stepper({ current }: { current: number }) {
+  return (
+    <ol aria-label="Setup progress" className="m-0 flex list-none flex-wrap items-center gap-x-2 gap-y-1.5 p-0">
+      {auth.steps.map((label, i) => {
+        const done = i < current;
+        const active = i === current;
+        return (
+          <li key={label} className="flex items-center gap-2" aria-current={active ? 'step' : undefined}>
+            <span
+              className={`font-mono flex size-6 items-center justify-center rounded-full text-[12px] font-bold ${
+                done
+                  ? 'bg-[#52D68A]/20 text-[#52D68A]'
+                  : active
+                    ? 'bg-crimson text-white'
+                    : 'bg-white/8 text-dim'
+              }`}
+            >
+              {done ? <Icon name="check" size={12} stroke={3} /> : i + 1}
+            </span>
+            <span className={`text-[13px] font-medium ${active ? 'text-text' : 'text-dim'}`}>{label}</span>
+            {i < auth.steps.length - 1 && <span aria-hidden="true" className="h-px w-4 bg-white/14 lg:w-8" />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
 
 function Ladder() {
   let running = 0;
@@ -107,6 +136,7 @@ export function RoadmapDialog({
       style={{ background: SURFACE }}
     >
       <div className="anim-pop flex flex-col gap-5 p-5 pt-6 lg:gap-6 lg:p-9">
+        {!IS_PREVIEW && <Stepper current={step === 'placement' ? 2 : 1} />}
         <div className="flex items-start justify-between gap-4">
           <div className="flex flex-col gap-2">
             <span className="font-mono text-[13px] tracking-[0.02em] text-crimson-hi">

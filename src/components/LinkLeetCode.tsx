@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { apiErrors, roadmap } from '@/lib/content';
 import type { RankKey } from '@/lib/curriculum';
-import { apiPost } from '@/lib/client-api';
+import { IS_PREVIEW, apiPost } from '@/lib/client-api';
 import { Icon } from './icons';
 
 const L = roadmap.link;
@@ -21,11 +21,14 @@ type Linked = { username: string; rank: RankKey; isNew: boolean };
 export function LinkLeetCode({
   claim,
   defaultUsername = '',
+  intent = 'signup',
   onLinked,
 }: {
   /** One-time claim from a signup that just happened, so the link attaches to it. */
   claim?: string;
   defaultUsername?: string;
+  /** 'signup' creates the account when the code checks out; 'signin' never does. */
+  intent?: 'signup' | 'signin';
   onLinked: (m: Linked) => void;
 }) {
   const [username, setUsername] = useState(defaultUsername);
@@ -43,6 +46,7 @@ export function LinkLeetCode({
     const res = await apiPost<{ challengeId: string; code: string }>('/api/leetcode/link', {
       username: username.trim(),
       claim,
+      intent,
     });
     setBusy(null);
     if (!res.ok) return fail(res.error);
@@ -105,7 +109,14 @@ export function LinkLeetCode({
             <span className="sheen" aria-hidden="true" />
             {busy === 'code' ? L.gettingCode : L.getCode}
           </button>
-          <p className="m-0 text-sm leading-[1.5] text-muted">{L.returning}</p>
+          {intent === 'signup' && !IS_PREVIEW && (
+            <p className="m-0 text-sm leading-[1.5] text-muted">
+              {L.returning}{' '}
+              <a href="/signin" className="font-semibold text-soft underline underline-offset-2 hover:text-text">
+                {L.returningLink}
+              </a>
+            </p>
+          )}
         </form>
       ) : (
         <div className="flex flex-col gap-4">

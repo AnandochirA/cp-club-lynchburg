@@ -22,8 +22,8 @@ for (const entry of await readdir(root)) {
 }
 
 // A static export cannot carry server-only routes. Add any new page that reads
-// the database or cookies (like /me) here, or this build breaks.
-for (const dir of ['src/app/api', 'src/app/admin', 'src/app/me']) {
+// the database or cookies (like /me and /signin) here, or this build breaks.
+for (const dir of ['src/app/api', 'src/app/admin', 'src/app/me', 'src/app/signin']) {
   await rm(path.join(stage, dir), { recursive: true, force: true });
 }
 

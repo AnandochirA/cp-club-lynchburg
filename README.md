@@ -64,13 +64,22 @@ Five ranks, **250 problems**, about ten a week:
 | Ancient  | 70       | trees, tries, heap, backtracking, graphs, dynamic programming |
 | Divine   | 30       | LeetCode Hards, plus proof of a passed company assessment (approved by an officer) |
 
-**The member's journey.** Join form → a popup with the roadmap → link LeetCode →
-placement (or skip; "Never coded" starts at Guardian) → `/me` to see progress.
+**Sign up and sign in.** *Sign up* is the form on the home page (name, email,
+class year, major, experience), then a popup that walks through the roadmap →
+link LeetCode → placement (or skip; "Never coded" starts at Guardian). *Sign in*
+is `/signin`: verify your LeetCode account and you land on `/me`. There are no
+passwords. Signing in never creates an account: if there isn't one it says so and
+points to sign-up. `/me` sends anyone who is signed out to `/signin`. The header
+shows "Sign in" / "Sign up", or "My progress" once signed in (it reads a
+non-sensitive `cp_in` cookie, so no extra request; the real session is the
+separate HttpOnly `cp_session` cookie).
 
 **Linking.** A member enters their LeetCode username and gets a one-time code
 (`CPCLUB-XXXXXX`). They paste it into their LeetCode "About me"; we read the
 public profile and look for it. That proof, never an email, is what creates a
-session. It is also how a returning member signs back in.
+session. Each challenge records an `intent` (`signup` or `signin`): a sign-up
+creates the account when the code checks out, a sign-in never does. The same
+proof is how a returning member signs back in.
 
 **Tracking.** We read each member's latest Accepted submissions from LeetCode's
 public (unofficial) GraphQL API and keep our own log. Things to know:
@@ -181,10 +190,11 @@ src/
     layout.tsx                  fonts + metadata
     globals.css                 design tokens, component classes, animations
     me/page.tsx                 a member's rank and progress
+    signin/page.tsx             sign in (redirects to /me if already signed in)
     admin/page.tsx              the signup table
     api/
       signup/                   POST = join, GET = the list (token-gated)
-      leetcode/{link,verify}/   the About-me code proof
+      leetcode/{link,verify}/   the About-me code proof (intent: signup | signin)
       me/                       who am I, sync now, sign out, delete my data
       placement/[action]/       start | poll | finish
       admin/                    members list + officer actions, LeetCode probe
@@ -225,7 +235,7 @@ works too — `npm run build && npm start`. Apply `db/schema.sql` first (see abo
 ### The static preview
 
 `npm run build:preview` produces `out/`, a plain static copy with no server.
-The API routes, `/admin` and `/me` are excluded, because a static export has
+The API routes, `/admin`, `/me` and `/signin` are excluded, because a static export has
 nowhere to run them, so the popup shows the roadmap only. The preview's form
 writes to its host page's document store instead of Postgres, so signups
 collected there live with the preview, not in your database. Use the real

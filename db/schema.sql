@@ -119,3 +119,7 @@ create table if not exists sync_state (
   lock_until     timestamptz
 );
 insert into sync_state (id) values (1) on conflict do nothing;
+
+-- Sign up vs sign in. A 'signup' challenge creates the member when the code
+-- checks out; a 'signin' challenge only ever signs in to an existing member.
+alter table link_challenges add column if not exists intent text not null default 'signup';

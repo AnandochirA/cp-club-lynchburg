@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { MemberDashboard, MeSignIn } from '@/components/MemberDashboard';
+import { redirect } from 'next/navigation';
+import { MemberDashboard } from '@/components/MemberDashboard';
 import { memberPage as M } from '@/lib/content';
 import { memberView, type MemberView } from '@/lib/member-view';
 import { getSession } from '@/lib/session';
@@ -19,6 +20,8 @@ export default async function MePage() {
     console.error('me page failed', err);
     broken = true;
   }
+  // Not signed in: send them to the sign-in page rather than showing a form here.
+  if (!broken && !view) redirect('/signin');
 
   return (
     <main className="min-h-dvh bg-ink px-5 py-8 text-text lg:py-14">
@@ -33,10 +36,8 @@ export default async function MePage() {
         </h1>
         {broken ? (
           <p className="text-muted">Something went wrong on our side. Please try again in a moment.</p>
-        ) : view ? (
-          <MemberDashboard initial={view} />
         ) : (
-          <MeSignIn />
+          view && <MemberDashboard initial={view} />
         )}
       </div>
     </main>

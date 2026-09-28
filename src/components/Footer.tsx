@@ -3,10 +3,10 @@ import { club, footer } from '@/lib/content';
 import logo from '@/assets/logo.png';
 
 export function Footer() {
-  // The static preview has no server, so there is no /me page to link to.
+  // The static preview has no server, so there is no /me or /signin page to link to.
   const links =
     process.env.NEXT_PUBLIC_STATIC_PREVIEW === '1'
-      ? footer.links.filter((l) => l.href !== '/me')
+      ? footer.links.filter((l) => l.href !== '/me' && l.href !== '/signin')
       : footer.links;
   return (
     <footer className="relative flex flex-col gap-4 overflow-hidden border-t border-[#1A1B22] bg-ink-deep px-5 pt-11 text-muted lg:px-30 lg:pt-16">
