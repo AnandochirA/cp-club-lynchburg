@@ -1,4 +1,4 @@
-import { events as E } from '@/lib/content';
+import { events as E, type UpcomingEvent } from '@/lib/content';
 import { Icon } from './icons';
 import { Eyebrow, H2, PingDot } from './ui';
 
@@ -50,7 +50,7 @@ function QuizRow() {
   );
 }
 
-function Slot({ item }: { item: (typeof E.upcoming)[number] }) {
+function Slot({ item }: { item: UpcomingEvent }) {
   return (
     <article
       className={`reveal flex flex-col justify-between gap-3 rounded-2xl p-4 px-4.5 lg:flex-grow lg:gap-5 lg:rounded-[22px] lg:px-7 lg:py-6.5 ${
@@ -81,6 +81,7 @@ function Slot({ item }: { item: (typeof E.upcoming)[number] }) {
 
 export function Events() {
   const f = E.featured;
+  const hasSide = E.upcoming.length > 0;
   return (
     <section
       id="events"
@@ -97,7 +98,11 @@ export function Events() {
         </div>
 
         <div className="mt-7 grid gap-5 lg:mt-14 lg:grid-cols-12">
-          <article className="card-d reveal relative flex flex-col gap-5 overflow-hidden rounded-[22px] p-5 lg:col-span-9 lg:flex-row lg:gap-9 lg:rounded-[26px] lg:p-9">
+          <article
+            className={`card-d reveal relative flex flex-col gap-5 overflow-hidden rounded-[22px] p-5 lg:flex-row lg:gap-9 lg:rounded-[26px] lg:p-9 ${
+              hasSide ? 'lg:col-span-9' : 'lg:col-span-12'
+            }`}
+          >
             <span
               aria-hidden="true"
               className="pointer-events-none absolute -top-20 -left-15 h-55 w-65 rounded-full lg:-top-35 lg:-left-30 lg:h-105 lg:w-130"
@@ -117,9 +122,11 @@ export function Events() {
               <span className="font-display text-center text-2xl leading-none font-extrabold tracking-[-0.005em] lg:text-[40px] lg:tracking-[-0.01em]">
                 {f.day}
               </span>
-              <span className="font-mono text-[11.5px] font-medium text-white/94 lg:flex lg:h-7 lg:items-center lg:rounded-full lg:bg-white/20 lg:px-3 lg:text-[13px] lg:font-semibold lg:text-white">
-                {f.time}
-              </span>
+              {f.time && (
+                <span className="font-mono text-[11.5px] font-medium text-white/94 lg:flex lg:h-7 lg:items-center lg:rounded-full lg:bg-white/20 lg:px-3 lg:text-[13px] lg:font-semibold lg:text-white">
+                  {f.time}
+                </span>
+              )}
             </div>
 
             {/* what */}
@@ -150,23 +157,17 @@ export function Events() {
                   <span className="sheen" aria-hidden="true" />
                   {f.primaryCta}
                 </a>
-                <a
-                  href="#discord"
-                  className="btn btn-ghost flex h-13 items-center justify-center gap-2.5 rounded-[14px] px-5.5 text-base font-semibold no-underline"
-                  style={{ color: 'var(--color-text)' }}
-                >
-                  <Icon name="chat" size={17} stroke={2} />
-                  {f.secondaryCta}
-                </a>
               </div>
             </div>
           </article>
 
-          <div className="flex flex-col gap-3 lg:col-span-3 lg:gap-5">
-            {E.upcoming.map((u) => (
-              <Slot key={u.title} item={u} />
-            ))}
-          </div>
+          {hasSide && (
+            <div className="flex flex-col gap-3 lg:col-span-3 lg:gap-5">
+              {E.upcoming.map((u) => (
+                <Slot key={u.title} item={u} />
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </section>

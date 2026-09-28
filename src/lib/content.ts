@@ -9,15 +9,12 @@ export const club = {
   full: 'Competitive Programming Club',
   school: 'University of Lynchburg',
   tagline: 'club @ lynchburg',
-  /** Paste your real Discord invite here. '#discord' scrolls to the card on the page. */
-  discordUrl: '#discord',
 };
 
 export const nav = [
   { href: '#why', label: 'Why join' },
   { href: '#week', label: 'Schedule' },
   { href: '#ranks', label: 'Ranks' },
-  { href: '#icpc', label: 'ICPC' },
   { href: '#events', label: 'Events' },
   { href: '#faq', label: 'FAQ' },
 ];
@@ -223,75 +220,31 @@ export const rankSection = {
   },
 };
 
-/* ----------------------------------------------------------------- icpc */
-
-export const icpc = {
-  eyebrow: 'icpc',
-  title: 'Go compete for real.',
-  intro: {
-    before:
-      'ICPC is the oldest and largest programming contest in the world: three people, one computer, five hours. The Mid-Atlantic Regional is ',
-    strong: 'Saturday, November 7',
-    after: ', and we are putting Lynchburg teams in it for the first time.',
-  },
-  label: 'ICPC Mid-Atlantic Regional',
-  labelShort: 'Mid-Atlantic Regional',
-  date: 'Sat, Nov 7',
-  meta: '2026 · [Host site]',
-  stats: [
-    { value: '3', label: 'students per team' },
-    { value: '1', label: 'computer, shared' },
-    { value: '5', label: 'hours, no break' },
-    { value: '~8', label: 'problems to solve' },
-  ],
-  penalty:
-    'Ranked by problems solved. Ties go to whoever got there first, plus 20 minutes for every wrong submission.',
-  rosterTitle: 'Six seats. Three are open',
-  rosterBody:
-    'We are forming Lynchburg’s first ICPC teams. We register teams in October, so rosters lock before then.',
-  teams: [
-    { name: 'Lynchburg 1', seats: ['[Name]', '[Name]', null] },
-    { name: 'Lynchburg 2', seats: ['[Name]', null, null] },
-  ] as { name: string; seats: (string | null)[] }[],
-  reassureLabel: 'Never done a five-hour contest?',
-  reassureBody:
-    'Nobody has, until their first one. Train with us in the study room and walk in with a team that knows how you think.',
-  primaryCta: 'Claim a team spot',
-  secondaryCta: 'Ask about ICPC',
-};
-
 /* --------------------------------------------------------------- events */
+
+export type UpcomingEvent = { tag: string; title: string; meta: string; real: boolean };
 
 export const events = {
   eyebrow: 'upcoming events',
   title: 'Start in the study room.',
-  note: 'New events land here and on Discord.',
+  note: 'New events will be announced here.',
   featured: {
-    every: 'Every',
-    day: '[Day]',
-    time: '[Time]',
+    every: 'Coming',
+    day: 'Soon',
+    /** Small pill under the day. Leave empty to hide it (e.g. while the schedule is unset). */
+    time: '',
     pill: 'Weekly',
     title: 'Study room',
     body: 'Drop in, solve problems side by side, and compete with whoever’s in the room.',
     meta: [
-      { icon: 'pin' as const, text: '[Room/Building]' },
-      { icon: 'chat' as const, text: 'Also open on Discord' },
       { icon: 'trophy' as const, text: 'Leaderboard tracks progress' },
       { icon: 'pizza' as const, text: 'Free pizza', highlight: true },
     ],
     quiz: { text: 'Placement quiz + find your rank', hint: 'easy · medium · hard' },
     primaryCta: 'Join the Club',
-    secondaryCta: 'Join the room',
   },
-  upcoming: [
-    {
-      tag: 'Nov 7',
-      title: 'ICPC Mid-Atlantic Regional',
-      meta: 'Sat, Nov 7 · 5 hours · [Host site]',
-      real: true,
-    },
-    { tag: 'Soon', title: '[Another event]', meta: '[Date] · [Time] · [Room]', real: false },
-  ],
+  /** Extra events beside the study room. Empty hides the column; the study room goes full width. */
+  upcoming: [] as UpcomingEvent[],
 };
 
 /* ------------------------------------------------------------------ faq */
@@ -299,9 +252,6 @@ export const events = {
 export const faqSection = {
   eyebrow: 'faq',
   title: 'Quick answers.',
-  footnoteBefore: 'Something else on your mind? ',
-  footnoteLink: 'Ask us on Discord',
-  footnoteAfter: '.',
 };
 
 export const faq: [string, string][] = [
@@ -335,8 +285,8 @@ export const leadership = {
   eyebrow: 'leadership',
   title: 'Who’s behind it.',
   people: [
-    { initial: 'A', name: 'Anand', role: 'President', line: '[Major · Class year]' },
-    { initial: 'J', name: 'Justin', role: 'Director of Outreach', line: '[Major · Class year]' },
+    { initial: 'A', name: 'Anand', role: 'President', line: 'CS · Class of 2027' },
+    { initial: 'J', name: 'Justin', role: 'Director of Outreach', line: 'CS · Class of 2027' },
   ],
 };
 
@@ -370,20 +320,17 @@ export const join = {
   submit: 'Join the Club',
   submitting: 'Sending…',
   fineprint: 'No commitment. Just club updates, no spam.',
-  divider: 'or',
-  discord: { title: 'Join our Discord', sub: 'daily problem · event news' },
   success: {
     title: 'You’re in.',
     sub: 'Here’s what happens next.',
     steps: [
       'Watch your inbox for study room details',
-      'Say hi in the Discord',
       'Come to the study room. Free pizza.',
     ],
     back: 'Edit my answers',
   },
   errors: {
-    generic: 'Something went wrong on our side. Try again, or message us on Discord.',
+    generic: 'Something went wrong on our side. Please try again in a moment.',
     duplicate: 'You are already on the list — no need to sign up twice.',
     offline: 'Could not reach the server. Check your connection and try again.',
   },
@@ -393,7 +340,6 @@ export const footer = {
   line: `A student organization at ${club.school}.`,
   links: [
     { href: '#join', label: 'Join' },
-    { href: '#discord', label: 'Discord' },
     { href: '#faq', label: 'FAQ' },
     { href: '#top', label: 'Back to top' },
   ],

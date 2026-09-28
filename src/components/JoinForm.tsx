@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { club, join as J } from '@/lib/content';
+import { join as J } from '@/lib/content';
 import { submitSignup } from '@/lib/submit';
 import { Icon } from './icons';
 
@@ -254,38 +254,6 @@ export function Join() {
               {J.sub} <span className="whitespace-nowrap">{J.subNowrap}</span>
             </p>
           </div>
-
-          <div
-            aria-hidden="true"
-            className="font-mono my-5.5 flex items-center gap-3 text-[13px] text-white lg:hidden"
-          >
-            <span className="h-px flex-grow bg-white/30" />
-            {J.divider}
-            <span className="h-px flex-grow bg-white/30" />
-          </div>
-
-          <a
-            id="discord"
-            href={club.discordUrl}
-            className="btn flex min-h-18 items-center gap-3.5 rounded-[18px] border border-transparent py-3 pr-4.5 pl-3.5 text-white no-underline shadow-[0_18px_40px_-20px_rgba(0,0,0,0.75)] hover:text-white lg:mt-auto"
-            style={{
-              background:
-                'linear-gradient(#0E0F14, #0E0F14) padding-box, linear-gradient(180deg, rgba(255,255,255,0.18), rgba(255,255,255,0.04)) border-box',
-            }}
-          >
-            <span className="sheen" aria-hidden="true" />
-            <span
-              aria-hidden="true"
-              className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-line text-white"
-            >
-              <Icon name="chat" size={22} stroke={2} />
-            </span>
-            <span className="flex flex-grow flex-col gap-0.75">
-              <span className="text-[17px] font-semibold">{J.discord.title}</span>
-              <span className="font-mono text-[12.5px] text-muted">{J.discord.sub}</span>
-            </span>
-            <Icon name="arrow" size={18} stroke={2.2} className="arrow" />
-          </a>
         </div>
 
         <div className="lg:col-span-6 lg:col-start-7">

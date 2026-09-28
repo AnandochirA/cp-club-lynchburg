@@ -44,20 +44,23 @@ Both refuse to answer without the token, and the page is marked `noindex`.
 ## Editing the site
 
 **All copy lives in `src/lib/content.ts`.** Headlines, FAQ answers, rank names
-and topics, ICPC rosters, event details, leadership — change them there and the
-page follows. You should not need to open a component to change words.
+and topics, event details, leadership — change them there and the page
+follows. You should not need to open a component to change words.
 
 Anything in `[square brackets]` is a placeholder waiting on a real value:
 
-| Placeholder             | Where                                     |
-| ----------------------- | ----------------------------------------- |
-| `[Day]`, `[Time]`       | study room hours — `events.featured`      |
-| `[Room/Building]`       | where the study room meets                |
-| `[Host site]`           | ICPC regional location — `icpc.meta`      |
-| `[Name]` ×3             | ICPC rosters — `icpc.teams`               |
-| `[Major · Class year]`  | leadership cards — `leadership.people`    |
-| `[Another event]`       | the spare event slot — `events.upcoming`  |
-| `club.discordUrl`       | set to your real Discord invite           |
+| Placeholder                 | Where                                            |
+| --------------------------- | ------------------------------------------------ |
+| `[Day]`, `[Time]`, `[Room]` | when and where sessions meet — `week.when`       |
+
+The study room card in **Events** currently reads "Coming Soon". When the
+schedule is set, change `events.featured.every` / `day` / `time` (e.g. `Every` /
+`Thursday` / `6:00 PM`) and add a location row to `events.featured.meta`. Extra
+events go in `events.upcoming`; while it is empty the study room card runs full
+width.
+
+There is no Discord link or ICPC section right now. To bring a Discord button
+back, add a `discordUrl` to `club` and a link in `JoinForm.tsx`.
 
 ## Structure
 

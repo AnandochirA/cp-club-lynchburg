@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { club, faq, faqSection as F } from '@/lib/content';
+import { faq, faqSection as F } from '@/lib/content';
 import { Icon } from './icons';
 import { Eyebrow, H2 } from './ui';
 
@@ -19,16 +19,6 @@ export function Faq() {
         <div className="reveal flex flex-col items-start gap-3 lg:col-span-5">
           <Eyebrow dark={false}>{F.eyebrow}</Eyebrow>
           <H2 id="faq-title">{F.title}</H2>
-          <p className="m-0 mt-2 max-w-95 text-[15px] leading-[1.5] text-ink-muted lg:text-[17px]">
-            {F.footnoteBefore}
-            <a
-              href={club.discordUrl}
-              className="font-semibold whitespace-nowrap text-crimson-lo hover:text-crimson"
-            >
-              {F.footnoteLink}
-            </a>
-            {F.footnoteAfter}
-          </p>
         </div>
 
         <div className="card-l reveal overflow-hidden rounded-[20px] lg:col-span-7 lg:col-start-6 lg:rounded-[22px]">

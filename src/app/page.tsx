@@ -3,7 +3,6 @@ import { Hero } from '@/components/Hero';
 import { WhyJoin } from '@/components/WhyJoin';
 import { Week } from '@/components/Week';
 import { Ranks } from '@/components/Ranks';
-import { Icpc } from '@/components/Icpc';
 import { Events } from '@/components/Events';
 import { Faq } from '@/components/Faq';
 import { Leadership } from '@/components/Leadership';
@@ -19,7 +18,6 @@ export default function Page() {
         <WhyJoin />
         <Week />
         <Ranks />
-        <Icpc />
         <Events />
         <Faq />
         <Leadership />

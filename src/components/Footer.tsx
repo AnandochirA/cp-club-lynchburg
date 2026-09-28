@@ -1,16 +1,13 @@
+import Image from 'next/image';
 import { club, footer } from '@/lib/content';
+import logo from '@/assets/logo.png';
 
 export function Footer() {
   return (
     <footer className="relative flex flex-col gap-4 overflow-hidden border-t border-[#1A1B22] bg-ink-deep px-5 pt-11 text-muted lg:px-30 lg:pt-16">
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
         <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="gloss font-mono flex size-7.5 items-center justify-center rounded-[9px] text-[11.5px] font-bold tracking-[-0.03em]"
-          >
-            cp_
-          </span>
+          <Image src={logo} alt="" className="h-9 w-auto shrink-0" />
           <span className="font-display text-base font-bold text-text">{club.full}</span>
         </div>
         <p className="m-0 text-[15px] leading-[1.5]">{footer.line}</p>

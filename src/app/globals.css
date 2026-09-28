@@ -6,7 +6,6 @@
 @theme {
   --color-ink: #0b0c10;
   --color-ink-deep: #08090c;
-  --color-ink-icpc: #0a0a0e;
   --color-card: #14151b;
   --color-line: #1f2028;
   --color-hair: #3a3b46;
@@ -399,9 +398,6 @@
 }
 .anim-open {
   animation: open-down 0.5s var(--ease-out-expo) both;
-}
-.anim-float {
-  animation: float 5.5s ease-in-out infinite;
 }
 .anim-shine {
   animation: shine 4s ease-in-out infinite;

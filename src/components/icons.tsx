@@ -248,27 +248,3 @@ export function RankMark({
     </svg>
   );
 }
-
-/** An ICPC balloon — one is handed out per problem a team solves. */
-export function Balloon({ color, width }: { color: string; width: number }) {
-  return (
-    <svg
-      viewBox="0 0 24 34"
-      width={width}
-      height={Math.round((width * 34) / 24)}
-      fill="none"
-      aria-hidden="true"
-    >
-      <ellipse cx="12" cy="10" rx="7.4" ry="9.2" fill={color} opacity="0.92" />
-      <ellipse cx="9.2" cy="6.4" rx="2" ry="3" fill="#FFFFFF" opacity="0.32" />
-      <path d="M12 19.2 10.2 22h3.6z" fill={color} opacity="0.92" />
-      <path
-        d="M12 22c-2.2 2.6 2.2 5.4 0 8.4"
-        stroke={color}
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        opacity="0.5"
-      />
-    </svg>
-  );
-}
