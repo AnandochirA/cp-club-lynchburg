@@ -22,14 +22,26 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
   const [busy, setBusy] = useState<'sync' | 'out' | 'delete' | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [rankedUp, setRankedUp] = useState<string | null>(null);
+  // Which problems to list, and whether the list is expanded past the first few.
+  const [filter, setFilter] = useState<'all' | 'todo' | 'done'>('all');
+  const [showAll, setShowAll] = useState(false);
+  // Problems that were just found solved by a sync: highlighted for a few seconds.
+  const [justSolved, setJustSolved] = useState<Set<string>>(new Set());
+  const [syncMsg, setSyncMsg] = useState<string | null>(null);
   const [placing, setPlacing] = useState(initial.placement?.state === 'active');
 
   const rank = ranks.find((r) => r.key === me.rank)!;
   const next = me.nextRank ? ranks.find((r) => r.key === me.nextRank)! : null;
   const skin = SKIN[rank.key];
   const pct = me.progress.total === 0 ? 0 : (me.progress.solved / me.progress.total) * 100;
+  const set = curriculum[me.focus];
   const left = new Set(me.progress.remaining);
-  const todo = curriculum[me.focus].filter((p) => left.has(p.slug));
+  const todoCount = left.size;
+  const solvedCount = set.length - todoCount;
+  const visible = set.filter((p) =>
+    filter === 'all' ? true : filter === 'todo' ? left.has(p.slug) : !left.has(p.slug),
+  );
+  const shown = showAll ? visible : visible.slice(0, SHOW);
   // Finished Ancient: the target is now Divine's 30 Hards, but the rank itself
   // still needs an officer to approve an assessment.
   const aimingAtDivine = me.focus === 'divine' && me.rank !== 'divine';
@@ -38,12 +50,27 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
     setBusy('sync');
     setNote(null);
     setRankedUp(null);
+    setSyncMsg(null);
+    const before = new Set(me.progress.remaining);
+    const focusBefore = me.focus;
     const res = await apiPost<{ me: typeof me; outcome: { promoted: RankKey[] } }>('/api/me/sync');
     setBusy(null);
     if (!res.ok) return setNote(apiErrors[res.error] ?? apiErrors.server);
     setMe(res.data.me);
     const promoted = res.data.outcome.promoted;
     if (promoted.length > 0) setRankedUp(M.rankedUp(rankName(promoted[promoted.length - 1])));
+    // Same set of problems as before? Then anything that left "to do" is newly solved.
+    if (res.data.me.focus === focusBefore) {
+      const after = new Set(res.data.me.progress.remaining);
+      const fresh = [...before].filter((slug) => !after.has(slug));
+      if (fresh.length > 0) {
+        setJustSolved(new Set(fresh));
+        setTimeout(() => setJustSolved(new Set()), 4000);
+        setSyncMsg(M.newSolves(fresh.length));
+      } else if (promoted.length === 0) {
+        setSyncMsg(M.upToDate);
+      }
+    }
   }
 
   async function signOut() {
@@ -129,6 +156,11 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             {M.lastSynced}: {me.lastSyncedAt ? new Date(me.lastSyncedAt).toLocaleString() : M.never}
           </span>
         </div>
+        {syncMsg && (
+          <p role="status" className="font-mono m-0 text-[13.5px] font-medium text-[#52D68A]">
+            {syncMsg}
+          </p>
+        )}
         <p className="m-0 text-[13px] text-dim">{M.syncNote}</p>
         {note && (
           <p role="alert" className="m-0 text-[15px] font-medium text-[#FF8FA1]">
@@ -165,41 +197,110 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
         )}
       </section>
 
-      {todo.length === 0 && aimingAtDivine && (
+      {todoCount === 0 && aimingAtDivine && (
         <p className="card-d m-0 rounded-[22px] p-5 text-[16px] leading-[1.5] text-soft lg:p-7">{M.divineReady}</p>
       )}
-      {todo.length > 0 && (
-        <section className="card-d flex flex-col gap-3 rounded-[22px] p-5 lg:p-7" aria-label={M.remaining}>
-          <h2 className="font-display m-0 text-[22px] font-bold">
-            {me.focus === me.rank ? M.remaining : M.remainingDivine}
-          </h2>
-          <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-            {todo.slice(0, SHOW).map((p) => (
-              <li key={p.slug}>
-                <a
-                  href={`https://leetcode.com/problems/${p.slug}/`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3 rounded-xl bg-white/4 px-3.5 py-2.5 text-text no-underline hover:bg-white/8 hover:text-text"
-                >
-                  <span className="font-mono w-10 shrink-0 text-[12.5px] text-dim">{p.id}</span>
-                  <span className="min-w-0 flex-grow truncate text-[15.5px]">{p.title}</span>
-                  <span className="font-mono hidden shrink-0 text-[12px] text-dim sm:inline">{p.topic}</span>
-                  <span className="font-mono shrink-0 text-[12.5px]" style={{ color: diffColor(p.difficulty) }}>
-                    {p.difficulty.toLowerCase()}
-                  </span>
-                  <Icon name="external" size={14} stroke={2} className="shrink-0 text-dim" />
-                </a>
-              </li>
-            ))}
+      <section
+        className="card-d flex flex-col gap-4 rounded-[22px] p-5 lg:p-7"
+        aria-label={M.problemsTitle(rankName(me.focus))}
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+          <h2 className="font-display m-0 text-[22px] font-bold">{M.problemsTitle(rankName(me.focus))}</h2>
+          <span className="font-mono text-[13px] text-dim">
+            <strong className="font-bold text-[#52D68A]">{solvedCount}</strong> / {set.length} {M.solvedWord}
+          </span>
+        </div>
+
+        <div role="group" aria-label={M.filterLabel} className="flex flex-wrap gap-2">
+          {(['all', 'todo', 'done'] as const).map((f) => {
+            const n = f === 'all' ? set.length : f === 'todo' ? todoCount : solvedCount;
+            const on = filter === f;
+            return (
+              <button
+                key={f}
+                type="button"
+                aria-pressed={on}
+                onClick={() => {
+                  setFilter(f);
+                  setShowAll(false);
+                }}
+                className={`font-mono flex min-h-9 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-[13px] ${
+                  on
+                    ? 'border-white/25 bg-white/10 text-text'
+                    : 'border-white/10 bg-transparent text-muted hover:text-text'
+                }`}
+              >
+                {M.filters[f]}{' '}
+                <span className={on ? 'text-soft' : 'text-dim'}>{n}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {visible.length === 0 ? (
+          <p className="m-0 text-[15px] leading-[1.5] text-muted">
+            {filter === 'done' ? M.nothingSolved : M.allSolved}
+          </p>
+        ) : (
+          <ul id="problem-list" className="m-0 flex list-none flex-col gap-1.5 p-0">
+            {shown.map((p) => {
+              const solved = !left.has(p.slug);
+              const fresh = justSolved.has(p.slug);
+              return (
+                <li key={p.slug} data-solved={solved ? 'true' : 'false'} data-fresh={fresh ? 'true' : undefined}>
+                  <a
+                    href={`https://leetcode.com/problems/${p.slug}/`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-text no-underline transition-colors hover:text-text ${
+                      solved
+                        ? 'border-[#52D68A]/25 bg-[#52D68A]/[0.07] hover:bg-[#52D68A]/[0.12]'
+                        : 'border-transparent bg-white/4 hover:bg-white/8'
+                    } ${fresh ? 'ring-2 ring-[#52D68A]/70' : ''}`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`flex size-6 shrink-0 items-center justify-center rounded-full ${
+                        solved
+                          ? 'bg-[#52D68A] text-[#08130D]'
+                          : 'border-[1.5px] border-white/22'
+                      } ${fresh ? 'anim-pop' : ''}`}
+                    >
+                      {solved && <Icon name="check" size={14} stroke={3.4} />}
+                    </span>
+                    <span className="sr-only">{solved ? M.solvedWord : M.notSolvedWord}: </span>
+                    <span className="font-mono w-10 shrink-0 text-[12.5px] text-dim">{p.id}</span>
+                    <span className="min-w-0 flex-grow truncate text-[15.5px]">{p.title}</span>
+                    <span className="font-mono hidden shrink-0 text-[12px] text-dim sm:inline">{p.topic}</span>
+                    <span className="font-mono shrink-0 text-[12.5px]" style={{ color: diffColor(p.difficulty) }}>
+                      {p.difficulty.toLowerCase()}
+                    </span>
+                    <Icon name="external" size={14} stroke={2} className="shrink-0 text-dim" />
+                  </a>
+                </li>
+              );
+            })}
           </ul>
-          {todo.length > SHOW && (
-            <p className="font-mono m-0 text-[12.5px] text-dim">
-              + {todo.length - SHOW} more in {rankName(me.focus)}
-            </p>
-          )}
-        </section>
-      )}
+        )}
+
+        {visible.length > SHOW && (
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            aria-expanded={showAll}
+            aria-controls="problem-list"
+            className="font-mono flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 text-[13px] text-soft hover:bg-white/5 hover:text-text"
+          >
+            {showAll ? M.showLess : M.showMore(visible.length - SHOW, rankName(me.focus))}
+            <Icon
+              name="chev"
+              size={16}
+              stroke={2.2}
+              className={`transition-transform duration-300 ${showAll ? 'rotate-180' : ''}`}
+            />
+          </button>
+        )}
+      </section>
 
       <div className="flex flex-wrap gap-x-6 gap-y-1 pt-1">
         <button
