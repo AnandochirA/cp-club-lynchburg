@@ -171,3 +171,20 @@ export async function loadSolved(memberId: number): Promise<Set<string>> {
   `) as { slug: string }[];
   return new Set(rows.map((r) => r.slug));
 }
+
+/**
+ * Every problem this member has solved (same rules as loadSolved), with the
+ * moment LeetCode first accepted it, oldest first. This is what pace, streaks
+ * and the "replay my climb" animation are built from.
+ */
+export async function loadSolvedTimes(memberId: number): Promise<{ slug: string; ts: number }[]> {
+  const sql = db();
+  const rows = (await sql`
+    select e.slug, extract(epoch from min(e.ts))::bigint as ts
+    from ac_events e join members m on m.id = e.member_id
+    where e.member_id = ${memberId} and e.revoked_at is null and e.ts >= m.created_at
+    group by e.slug
+    order by min(e.ts), e.slug
+  `) as { slug: string; ts: string | number }[];
+  return rows.map((r) => ({ slug: r.slug, ts: Number(r.ts) }));
+}

@@ -190,6 +190,7 @@ src/
     layout.tsx                  fonts + metadata
     globals.css                 design tokens, component classes
     motion.css                  the motion language: reveals, verdict chips, hex cells
+    dash.css                    the signed-in dashboard ("the Ascent"), keyed to --tier
     me/page.tsx                 a member's rank and progress
     signin/page.tsx             sign in (redirects to /me if already signed in)
     admin/page.tsx              the signup table
@@ -203,9 +204,14 @@ src/
                                 LinkLeetCode, PlacementPanel, MemberDashboard
     motion/                     RevealObserver (scroll + pointer effects), HexField
     Climb.tsx                   the pinned, scroll-driven rank ladder
+    MemberDashboard.tsx         /me: sync, rank-up and the state everything below shares
+    dash/                       the dashboard's parts: PlayerCard, MyGrid (the map and
+                                the climb replay), UpNext, Momentum, Topics, ProblemList,
+                                RecentLog, Ceremony, AppBar, Odometer
   lib/
     content.ts                  all copy and data
     hexgrid.ts                  the 250-cell honeycomb layout and tier colours
+    momentum.ts                 weekly pace and streaks, in the member's own timezone
     curriculum.ts               GENERATED: the 250 problems
     placement-pool.ts           GENERATED, server-only: placement problems
     leetcode.ts                 the only module that talks to LeetCode
@@ -242,6 +248,18 @@ db/schema.sql
   section is fully visible and the Climb becomes a plain list of ranks.
 - `prefers-reduced-motion: reduce` gives the same static result: no ambient
   animation, no pinned scene, no pointer effects.
+- The dashboard (`/me`) is one instrument panel around a single idea: the same
+  250-cell honeycomb as the landing page, but it is *your* map. Solved cells are lit
+  in their rank's colour, the next three problems are numbered on it, and
+  "Replay my climb" re-runs your solves in the order you did them. Its data comes
+  from `memberView` (`solved`, `timeline` = [slug, unix seconds LeetCode first
+  accepted it], `joinedAt`), so pace, streaks and the replay are real, not decoration.
+  Counters are `Odometer`s: the markup holds the true number and CSS rolls it in, so
+  the server-rendered page is correct before any script runs.
+- Dashboard motion is transform/opacity only, the whole file goes quiet under
+  `prefers-reduced-motion` (a rank-up shows a plain toast instead of the ceremony), and
+  the map is `role="img"` with the problem list as its accessible equivalent. Press
+  `S` anywhere on the page to sync.
 - Grids that hold text set an explicit mobile track (`grid-cols-[minmax(0,1fr)]`).
   An implicit `auto` track grows to fit unbreakable text (a long problem title
   once pushed the hero past its gutter) and breaks the mobile layout.

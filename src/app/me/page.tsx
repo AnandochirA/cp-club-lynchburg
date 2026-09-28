@@ -23,23 +23,21 @@ export default async function MePage() {
   // Not signed in: send them to the sign-in page rather than showing a form here.
   if (!broken && !view) redirect('/signin');
 
+  if (broken || !view) {
+    return (
+      <main className="flex min-h-dvh flex-col items-start gap-4 bg-ink px-5 py-10 text-text lg:px-14">
+        <Link href="/" className="font-mono text-sm text-muted no-underline hover:text-text">
+          ← Competitive Programming Club
+        </Link>
+        <h1 className="font-display caps m-0 text-[64px] leading-[0.82] font-black lg:text-[96px]">{M.title}</h1>
+        <p className="text-muted">Something went wrong on our side. Please try again in a moment.</p>
+      </main>
+    );
+  }
+
   return (
-    <main className="min-h-dvh bg-ink px-5 py-8 text-text lg:py-14">
-      <div className="mx-auto flex w-full max-w-[760px] flex-col gap-6">
-        <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="font-mono text-sm text-muted no-underline hover:text-text">
-            ← Competitive Programming Club
-          </Link>
-        </div>
-        <h1 className="font-display caps m-0 text-[64px] leading-[0.82] font-black lg:text-[96px]">
-          {M.title}
-        </h1>
-        {broken ? (
-          <p className="text-muted">Something went wrong on our side. Please try again in a moment.</p>
-        ) : (
-          view && <MemberDashboard initial={view} />
-        )}
-      </div>
+    <main>
+      <MemberDashboard initial={view} />
     </main>
   );
 }
