@@ -134,7 +134,7 @@ export function PlacementPanel({
           <RankBadge rank={rank} size={72} bg={SURFACE} />
           <div className="flex flex-col gap-1">
             <span className="font-mono text-xs tracking-[0.1em] uppercase text-dim">{P.result.title}</span>
-            <span className="font-display text-[34px] leading-none font-extrabold">{rankName(rank.key)}</span>
+            <span className="font-display caps text-[64px] leading-[0.82] font-black">{rankName(rank.key)}</span>
             <span className="font-mono text-[13px] text-muted">{rank.countLabel}</span>
           </div>
         </div>
@@ -159,7 +159,7 @@ export function PlacementPanel({
         <button
           type="button"
           onClick={onDone}
-          className="btn btn-primary flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border-0 px-6 font-sans text-base font-semibold text-white"
+          className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-none border-0 px-6 font-sans text-base font-semibold text-white"
         >
           <span className="sheen" aria-hidden="true" />
           {P.result.next}
@@ -175,7 +175,7 @@ export function PlacementPanel({
         <div className="flex items-baseline justify-between gap-3">
           <span className="font-mono text-xs tracking-[0.1em] uppercase text-dim">{P.timeLeft}</span>
           <span
-            className={`font-mono text-[34px] leading-none font-bold tabular-nums ${
+            className={`font-display text-[72px] leading-[0.8] font-black tabular-nums ${
               msLeft < 5 * 60_000 ? 'text-crimson-hi' : 'text-text'
             }`}
             aria-live="off"
@@ -187,7 +187,7 @@ export function PlacementPanel({
           {placement.problems.map((p) => (
             <li
               key={p.slug}
-              className={`flex flex-col gap-2 rounded-2xl border p-3.5 sm:flex-row sm:items-center sm:justify-between ${
+              className={`flex flex-col gap-2 rounded-none border p-3.5 sm:flex-row sm:items-center sm:justify-between ${
                 p.passed ? 'border-[#52D68A]/40 bg-[#52D68A]/8' : 'border-white/10 bg-white/3'
               }`}
             >
@@ -207,7 +207,7 @@ export function PlacementPanel({
                 href={p.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-ghost flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl px-4 font-sans text-[14.5px] font-semibold no-underline"
+                className="btn btn-ghost flex h-11 shrink-0 items-center justify-center gap-2 rounded-none px-4 font-sans text-[14.5px] font-semibold no-underline"
                 style={{ color: 'var(--color-text)' }}
               >
                 {P.open}
@@ -228,7 +228,7 @@ export function PlacementPanel({
             type="button"
             onClick={() => void act('poll')}
             disabled={busy !== null}
-            className="btn btn-ghost flex h-12 cursor-pointer items-center justify-center rounded-[14px] px-5 font-sans text-[15px] font-semibold"
+            className="btn btn-ghost flex h-12 cursor-pointer items-center justify-center rounded-none px-5 font-sans text-[15px] font-semibold"
             style={{ color: 'var(--color-text)' }}
           >
             {busy === 'poll' ? P.checking : P.check}
@@ -237,7 +237,7 @@ export function PlacementPanel({
             type="button"
             onClick={() => void act('finish')}
             disabled={busy !== null}
-            className="btn btn-primary flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 px-5 font-sans text-[15px] font-semibold text-white disabled:cursor-wait disabled:opacity-70"
+            className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-12 cursor-pointer items-center justify-center gap-2 rounded-none border-0 px-5 font-sans text-[15px] font-semibold text-white disabled:cursor-wait disabled:opacity-70"
           >
             <span className="sheen" aria-hidden="true" />
             {busy === 'finish' ? P.finishing : P.finish}
@@ -254,7 +254,7 @@ export function PlacementPanel({
         <div className="flex items-center gap-4">
           <RankBadge rank={ranks[0]} size={64} bg={SURFACE} />
           <div className="flex flex-col gap-1">
-            <span className="font-display text-[26px] leading-[1.1] font-extrabold">{P.beginner.title}</span>
+            <span className="font-display caps text-[40px] leading-[0.9] font-black">{P.beginner.title}</span>
             <span className="text-[15.5px] leading-[1.45] text-muted">{P.beginner.sub}</span>
           </div>
         </div>
@@ -262,7 +262,7 @@ export function PlacementPanel({
           <button
             type="button"
             onClick={onSkip}
-            className="btn btn-primary flex h-13 cursor-pointer items-center justify-center rounded-[14px] border-0 px-6 font-sans text-base font-semibold text-white"
+            className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-13 cursor-pointer items-center justify-center rounded-none border-0 px-6 font-sans text-base font-semibold text-white"
           >
             <span className="sheen" aria-hidden="true" />
             {roadmap.close}
@@ -270,7 +270,7 @@ export function PlacementPanel({
           <button
             type="button"
             onClick={() => setTookAnyway(true)}
-            className="btn btn-ghost flex h-13 cursor-pointer items-center justify-center rounded-[14px] px-5 font-sans text-[15px] font-semibold"
+            className="btn btn-ghost flex h-13 cursor-pointer items-center justify-center rounded-none px-5 font-sans text-[15px] font-semibold"
             style={{ color: 'var(--color-text)' }}
           >
             {P.start}
@@ -300,7 +300,7 @@ export function PlacementPanel({
         ))}
       </ul>
       {error && (
-        <p role="alert" className="m-0 rounded-xl bg-crimson/14 px-3.5 py-3 text-[15px] leading-[1.45] font-medium text-[#FF8FA1]">
+        <p role="alert" className="m-0 rounded-none bg-crimson/14 px-3.5 py-3 text-[15px] leading-[1.45] font-medium text-[#FF8FA1]">
           {error}
         </p>
       )}
@@ -309,7 +309,7 @@ export function PlacementPanel({
           type="button"
           onClick={() => void act('start')}
           disabled={busy !== null}
-          className="btn btn-primary flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border-0 px-6 font-sans text-base font-semibold text-white disabled:cursor-wait disabled:opacity-70"
+          className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-none border-0 px-6 font-sans text-base font-semibold text-white disabled:cursor-wait disabled:opacity-70"
         >
           <span className="sheen" aria-hidden="true" />
           {busy === 'start' ? P.starting : P.start}
@@ -318,7 +318,7 @@ export function PlacementPanel({
           type="button"
           onClick={onSkip}
           disabled={busy !== null}
-          className="btn btn-ghost flex h-13 cursor-pointer items-center justify-center rounded-[14px] px-5 font-sans text-[15px] font-semibold"
+          className="btn btn-ghost flex h-13 cursor-pointer items-center justify-center rounded-none px-5 font-sans text-[15px] font-semibold"
           style={{ color: 'var(--color-text)' }}
         >
           {P.skip}

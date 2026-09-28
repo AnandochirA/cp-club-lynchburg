@@ -94,14 +94,14 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="card-d flex flex-col gap-4 rounded-[22px] p-5 lg:p-7" aria-label={M.rank}>
+      <section className="notch border border-white/10 bg-[#101116] flex flex-col gap-4 p-5 lg:p-7" aria-label={M.rank}>
         <div className="flex items-center gap-4">
           <RankBadge rank={rank} size={72} bg={SURFACE} />
           <div className="flex min-w-0 flex-grow flex-col gap-1">
             <span className="font-mono text-xs tracking-[0.1em] uppercase" style={{ color: skin.label }}>
               {M.rank} · Level {rank.level}
             </span>
-            <span className="font-display text-[34px] leading-none font-extrabold lg:text-[40px]">
+            <span className="font-display caps text-[64px] leading-[0.82] font-black lg:text-[84px]">
               {rank.name}
             </span>
             <span className="font-mono truncate text-[13px] text-dim">
@@ -122,9 +122,9 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
           aria-valuemin={0}
           aria-valuemax={me.progress.total}
           aria-valuenow={me.progress.solved}
-          className="h-2.5 overflow-hidden rounded-full bg-white/8"
+          className="h-2.5 overflow-hidden rounded-none bg-white/8"
         >
-          <div className="h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%`, background: skin.pip }} />
+          <div className="h-full rounded-none transition-[width] duration-700" style={{ width: `${pct}%`, background: skin.pip }} />
         </div>
         <div className="flex flex-col gap-0.5">
           <span className="text-base text-text">
@@ -134,7 +134,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
         </div>
 
         {rankedUp && (
-          <p role="status" className="font-display m-0 rounded-xl bg-[#52D68A]/14 px-3.5 py-3 text-[19px] font-bold text-[#52D68A]">
+          <p role="status" className="font-display m-0 rounded-none bg-[#52D68A]/14 px-3.5 py-3 text-[19px] font-bold text-[#52D68A]">
             {rankedUp}
           </p>
         )}
@@ -147,7 +147,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             type="button"
             onClick={sync}
             disabled={busy !== null}
-            className="btn btn-primary flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 px-5 font-sans text-[15px] font-semibold text-white disabled:cursor-wait disabled:opacity-70"
+            className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-12 cursor-pointer items-center justify-center gap-2 rounded-none border-0 px-5 font-sans text-[15px] font-semibold text-white disabled:cursor-wait disabled:opacity-70"
           >
             <span className="sheen" aria-hidden="true" />
             {busy === 'sync' ? M.syncing : M.sync}
@@ -169,8 +169,8 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
         )}
       </section>
 
-      <section className="card-d flex flex-col gap-3.5 rounded-[22px] p-5 lg:p-7" aria-label={M.placement}>
-        <h2 className="font-display m-0 text-[22px] font-bold">{M.placement}</h2>
+      <section className="notch border border-white/10 bg-[#101116] flex flex-col gap-3.5 p-5 lg:p-7" aria-label={M.placement}>
+        <h2 className="font-display caps m-0 text-[34px] leading-[0.95] font-black">{M.placement}</h2>
         {placing ? (
           <PlacementPanel
             username={me.username}
@@ -189,7 +189,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
           <button
             type="button"
             onClick={() => setPlacing(true)}
-            className="btn btn-ghost flex h-12 w-fit cursor-pointer items-center justify-center rounded-[14px] px-5 font-sans text-[15px] font-semibold"
+            className="btn btn-ghost flex h-12 w-fit cursor-pointer items-center justify-center rounded-none px-5 font-sans text-[15px] font-semibold"
             style={{ color: 'var(--color-text)' }}
           >
             {M.takePlacement}
@@ -198,14 +198,14 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
       </section>
 
       {todoCount === 0 && aimingAtDivine && (
-        <p className="card-d m-0 rounded-[22px] p-5 text-[16px] leading-[1.5] text-soft lg:p-7">{M.divineReady}</p>
+        <p className="notch border border-white/10 bg-[#101116] m-0 p-5 text-[16px] leading-[1.5] text-soft lg:p-7">{M.divineReady}</p>
       )}
       <section
-        className="card-d flex flex-col gap-4 rounded-[22px] p-5 lg:p-7"
+        className="notch border border-white/10 bg-[#101116] flex flex-col gap-4 p-5 lg:p-7"
         aria-label={M.problemsTitle(rankName(me.focus))}
       >
         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-          <h2 className="font-display m-0 text-[22px] font-bold">{M.problemsTitle(rankName(me.focus))}</h2>
+          <h2 className="font-display caps m-0 text-[34px] leading-[0.95] font-black">{M.problemsTitle(rankName(me.focus))}</h2>
           <span className="font-mono text-[13px] text-dim">
             <strong className="font-bold text-[#52D68A]">{solvedCount}</strong> / {set.length} {M.solvedWord}
           </span>
@@ -224,7 +224,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
                   setFilter(f);
                   setShowAll(false);
                 }}
-                className={`font-mono flex min-h-9 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-[13px] ${
+                className={`font-mono flex min-h-9 cursor-pointer items-center gap-2 rounded-none border px-3.5 text-[13px] ${
                   on
                     ? 'border-white/25 bg-white/10 text-text'
                     : 'border-white/10 bg-transparent text-muted hover:text-text'
@@ -252,7 +252,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
                     href={`https://leetcode.com/problems/${p.slug}/`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`flex items-center gap-3 rounded-xl border px-3 py-2.5 text-text no-underline transition-colors hover:text-text ${
+                    className={`flex items-center gap-3 rounded-none border px-3 py-2.5 text-text no-underline transition-colors hover:text-text ${
                       solved
                         ? 'border-[#52D68A]/25 bg-[#52D68A]/[0.07] hover:bg-[#52D68A]/[0.12]'
                         : 'border-transparent bg-white/4 hover:bg-white/8'
@@ -260,10 +260,10 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
                   >
                     <span
                       aria-hidden="true"
-                      className={`flex size-6 shrink-0 items-center justify-center rounded-full ${
+                      className={`hex-tile flex size-7 shrink-0 items-center justify-center ${
                         solved
                           ? 'bg-[#52D68A] text-[#08130D]'
-                          : 'border-[1.5px] border-white/22'
+                          : 'bg-white/14'
                       } ${fresh ? 'anim-pop' : ''}`}
                     >
                       {solved && <Icon name="check" size={14} stroke={3.4} />}
@@ -289,7 +289,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             onClick={() => setShowAll((v) => !v)}
             aria-expanded={showAll}
             aria-controls="problem-list"
-            className="font-mono flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 text-[13px] text-soft hover:bg-white/5 hover:text-text"
+            className="font-mono flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-none border border-white/10 bg-transparent px-4 text-[13px] text-soft hover:bg-white/5 hover:text-text"
           >
             {showAll ? M.showLess : M.showMore(visible.length - SHOW, rankName(me.focus))}
             <Icon

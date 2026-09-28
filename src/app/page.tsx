@@ -1,5 +1,6 @@
 import { Nav } from '@/components/Nav';
 import { Hero } from '@/components/Hero';
+import { Ticker } from '@/components/Ticker';
 import { WhyJoin } from '@/components/WhyJoin';
 import { Week } from '@/components/Week';
 import { Ranks } from '@/components/Ranks';
@@ -15,6 +16,7 @@ export default function Page() {
       <Nav />
       <main className="flex flex-col">
         <Hero />
+        <Ticker />
         <WhyJoin />
         <Week />
         <Ranks />

@@ -6,26 +6,34 @@ import { Icon } from './icons';
 import { Eyebrow, H2 } from './ui';
 
 export function Faq() {
-  /** One answer open at a time, like the design. */
+  /** One answer open at a time. */
   const [open, setOpen] = useState<number | null>(null);
 
   return (
     <section
       id="faq"
       aria-labelledby="faq-title"
-      className="flex flex-col bg-paper px-5 py-19 pb-14 text-ink-text lg:px-30 lg:pt-34 lg:pb-28"
+      className="relative flex flex-col bg-ink px-5 py-19 text-text lg:px-30 lg:py-32"
     >
-      <div className="mx-auto grid w-full max-w-[1200px] gap-6 lg:grid-cols-12 lg:gap-x-6">
-        <div className="reveal flex flex-col items-start gap-3 lg:col-span-5">
-          <Eyebrow dark={false}>{F.eyebrow}</Eyebrow>
+      <div className="mx-auto grid grid-cols-[minmax(0,1fr)] w-full max-w-[1200px] gap-8 lg:grid-cols-12 lg:gap-x-10">
+        <div className="flex flex-col items-start gap-3 lg:sticky lg:top-32 lg:col-span-5 lg:self-start">
+          <Eyebrow>{F.eyebrow}</Eyebrow>
           <H2 id="faq-title">{F.title}</H2>
+          <p className="font-mono m-0 mt-2 text-[12.5px] tracking-[0.06em] text-dim">
+            {faq.length} answers
+          </p>
         </div>
 
-        <div className="card-l reveal overflow-hidden rounded-[20px] lg:col-span-7 lg:col-start-6 lg:rounded-[22px]">
+        <div data-stagger className="lg:col-span-7">
           {faq.map(([q, a], i) => {
             const isOpen = open === i;
             return (
-              <div key={q} className={i > 0 ? 'border-t border-[#EDE9E3]' : ''}>
+              <div
+                key={q}
+                className={`reveal border-t border-white/12 transition-colors duration-300 last:border-b ${
+                  isOpen ? 'bg-white/[0.035]' : ''
+                }`}
+              >
                 <h3 className="m-0">
                   <button
                     type="button"
@@ -33,29 +41,37 @@ export function Faq() {
                     aria-expanded={isOpen}
                     aria-controls={`faq-a${i}`}
                     onClick={() => setOpen(isOpen ? null : i)}
-                    className="faq-row font-display flex min-h-16 w-full cursor-pointer items-center justify-between gap-3.5 border-0 px-4 py-3.5 pl-5 text-left text-lg leading-[1.3] font-bold tracking-[-0.01em] text-ink-text lg:min-h-19.5 lg:gap-5 lg:px-5.5 lg:py-4.5 lg:pl-7.5 lg:text-[21px]"
+                    className="group flex min-h-16 w-full cursor-pointer items-center justify-between gap-5 border-0 bg-transparent px-1 py-5 text-left text-text lg:min-h-[76px] lg:px-4 lg:py-6"
                   >
-                    {q}
                     <span
-                      aria-hidden="true"
-                      className={`flex size-8 shrink-0 items-center justify-center rounded-full transition-colors lg:size-9 ${
-                        isOpen ? 'bg-crimson text-white' : 'bg-paper text-ink-muted'
+                      className={`text-[18px] leading-[1.3] font-semibold transition-colors duration-300 lg:text-[22px] ${
+                        isOpen ? 'text-white' : 'text-soft group-hover:text-white'
                       }`}
                     >
-                      <Icon name={isOpen ? 'minus' : 'plus'} size={16} stroke={2.4} />
+                      {q}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className={`hex-tile flex size-10 shrink-0 items-center justify-center transition-colors duration-300 ${
+                        isOpen ? 'bg-crimson text-white' : 'bg-white/10 text-white/80 group-hover:bg-white/20'
+                      }`}
+                    >
+                      <Icon
+                        name="plus"
+                        size={16}
+                        stroke={2.4}
+                        className={`transition-transform duration-500 ease-[var(--ease-out-expo)] ${isOpen ? 'rotate-45' : ''}`}
+                      />
                     </span>
                   </button>
                 </h3>
-                {isOpen && (
-                  <div
-                    id={`faq-a${i}`}
-                    role="region"
-                    aria-labelledby={`faq-q${i}`}
-                    className="anim-open max-w-150 px-5 pb-5 text-base leading-[1.55] text-ink-muted lg:px-7.5 lg:pb-6.5 lg:text-[17px] lg:leading-[1.6]"
-                  >
-                    {a}
+                <div id={`faq-a${i}`} role="region" aria-labelledby={`faq-q${i}`} inert={!isOpen} className={`faq-panel ${isOpen ? 'open' : ''}`}>
+                  <div>
+                    <p className="m-0 max-w-[620px] px-1 pb-6 text-base leading-[1.6] text-muted lg:px-4 lg:pb-7 lg:text-[17px]">
+                      {a}
+                    </p>
                   </div>
-                )}
+                </div>
               </div>
             );
           })}

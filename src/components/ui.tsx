@@ -4,7 +4,7 @@ import { Icon } from './icons';
 export function Eyebrow({ children, dark = true }: { children: string; dark?: boolean }) {
   return (
     <span
-      className={`font-mono text-[13px] tracking-[0.08em] lowercase ${
+      className={`font-mono text-[12.5px] font-medium tracking-[0.16em] uppercase ${
         dark ? 'text-dim' : 'text-ink-muted'
       }`}
     >
@@ -24,15 +24,25 @@ export function H2({
   id: string;
   className?: string;
 }) {
-  const text = children.endsWith('.') ? children.slice(0, -1) : children;
   const period = children.endsWith('.');
+  const text = period ? children.slice(0, -1) : children;
+  const words = text.split(' ');
   return (
     <h2
       id={id}
-      className={`font-display m-0 font-extrabold leading-[1.02] tracking-[-0.012em] text-balance text-[clamp(2rem,6vw,4.5rem)] ${className}`}
+      className={`rv-split font-display caps m-0 font-black leading-[0.9] tracking-[-0.004em] text-balance text-[clamp(2.8rem,8.4vw,5.9rem)] ${className}`}
     >
-      {text}
-      {period && <span className="text-crimson">.</span>}
+      {words.map((w, i) => (
+        <span key={i}>
+          <span className="split-w" style={{ ['--w' as string]: i }}>
+            <span>
+              {w}
+              {period && i === words.length - 1 && <span className="text-crimson">.</span>}
+            </span>
+          </span>
+          {i < words.length - 1 ? ' ' : ''}
+        </span>
+      ))}
     </h2>
   );
 }

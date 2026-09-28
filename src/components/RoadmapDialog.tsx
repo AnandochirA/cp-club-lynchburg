@@ -52,12 +52,12 @@ function Ladder() {
         return (
           <li
             key={r.key}
-            className="flex items-center gap-3.5 rounded-2xl border border-white/8 bg-white/[0.025] p-3 pr-4"
+            className="flex items-center gap-3.5 rounded-none border border-white/10 bg-white/[0.03] p-3 pr-4"
           >
             <RankBadge rank={r} size={44} pip={false} effects={false} dim={r.earnedOnly} bg={SURFACE} />
             <div className="flex min-w-0 flex-grow flex-col gap-1">
               <div className="flex flex-wrap items-baseline gap-x-2.5">
-                <span className="font-display text-[19px] leading-none font-extrabold">{r.name}</span>
+                <span className="font-display caps text-[28px] leading-none font-black">{r.name}</span>
                 <span className="font-mono text-[12.5px] text-dim">{r.countLabel}</span>
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -132,7 +132,7 @@ export function RoadmapDialog({
         // a click on the backdrop lands on the <dialog> itself, not its content
         if (e.target === ref.current) ref.current?.close();
       }}
-      className="m-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[720px] overflow-y-auto overscroll-contain rounded-[24px] border border-white/10 p-0 text-text shadow-[0_40px_120px_-30px_rgba(0,0,0,0.9)] backdrop:bg-[rgba(5,6,9,0.78)] backdrop:backdrop-blur-[6px]"
+      className="m-auto max-h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-[720px] overflow-y-auto overscroll-contain border-0 p-0 text-text backdrop:bg-[rgba(5,6,9,0.84)] backdrop:backdrop-blur-[6px] [clip-path:polygon(0_0,calc(100%-24px)_0,100%_24px,100%_100%,0_100%)]"
       style={{ background: SURFACE }}
     >
       <div className="anim-pop flex flex-col gap-5 p-5 pt-6 lg:gap-6 lg:p-9">
@@ -145,7 +145,7 @@ export function RoadmapDialog({
             </span>
             <h2
               id="roadmap-title"
-              className="font-display m-0 text-[30px] leading-[1.05] font-extrabold tracking-[-0.015em] text-balance lg:text-[42px]"
+              className="font-display caps m-0 text-[38px] leading-[0.9] font-black tracking-[0.002em] text-balance lg:text-[58px]"
             >
               {step === 'roadmap' && R.title}
               {step === 'link' && R.link.title}
@@ -156,7 +156,7 @@ export function RoadmapDialog({
             type="button"
             onClick={() => ref.current?.close()}
             aria-label={R.close}
-            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-white/10 bg-white/4 text-soft hover:text-text"
+            className="flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-none border border-white/10 bg-white/4 text-soft hover:text-text"
           >
             <Icon name="close" size={18} stroke={2.2} />
           </button>
@@ -165,14 +165,14 @@ export function RoadmapDialog({
         {step === 'roadmap' && (
           <>
             <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-              <span className="font-display text-[44px] leading-none font-extrabold text-crimson-hi lg:text-[56px]">
+              <span className="font-display text-[72px] leading-[0.8] font-black text-crimson-hi lg:text-[104px]">
                 {ladder.total}
               </span>
               <span className="text-[17px] leading-[1.45] text-muted">{R.sub}</span>
             </div>
             <Ladder />
             <div className="flex flex-col gap-2.5">
-              <h3 className="font-display m-0 text-[19px] font-bold">{R.rulesTitle}</h3>
+              <h3 className="font-display caps m-0 text-[26px] font-black">{R.rulesTitle}</h3>
               <ul className="m-0 flex list-none flex-col gap-2 p-0">
                 {R.rules.map((rule) => (
                   <li key={rule} className="flex items-start gap-2.5 text-[15.5px] leading-[1.5] text-soft">
@@ -189,7 +189,7 @@ export function RoadmapDialog({
                 <button
                   type="button"
                   onClick={() => setStep('link')}
-                  className="btn btn-primary flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border-0 px-6 font-sans text-base font-semibold text-white"
+                  className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-13 cursor-pointer items-center justify-center gap-2.5 rounded-none border-0 px-6 font-sans text-base font-semibold text-white"
                 >
                   <span className="sheen" aria-hidden="true" />
                   {R.cta}
@@ -199,7 +199,7 @@ export function RoadmapDialog({
               <button
                 type="button"
                 onClick={() => ref.current?.close()}
-                className="btn btn-ghost flex h-13 cursor-pointer items-center justify-center rounded-[14px] px-5 font-sans text-[15px] font-semibold"
+                className="btn btn-ghost flex h-13 cursor-pointer items-center justify-center rounded-none px-5 font-sans text-[15px] font-semibold"
                 style={{ color: 'var(--color-text)' }}
               >
                 {IS_PREVIEW ? R.close : R.later}

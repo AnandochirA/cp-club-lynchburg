@@ -15,6 +15,7 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
             'radial-gradient(640px 320px at 50% 0%, rgba(228,0,43,0.18), rgba(228,0,43,0) 70%)',
         }}
       />
+      <div aria-hidden="true" className="hex-bg-ink pointer-events-none absolute inset-0 opacity-80 [mask-image:radial-gradient(70%_60%_at_50%_10%,#000,transparent)]" />
       <div className="relative flex w-full max-w-[480px] flex-col gap-6 lg:gap-8">
         <Link
           href="/"

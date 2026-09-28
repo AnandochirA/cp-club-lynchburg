@@ -188,7 +188,8 @@ src/
   app/
     page.tsx                    composes the sections in order
     layout.tsx                  fonts + metadata
-    globals.css                 design tokens, component classes, animations
+    globals.css                 design tokens, component classes
+    motion.css                  the motion language: reveals, verdict chips, hex cells
     me/page.tsx                 a member's rank and progress
     signin/page.tsx             sign in (redirects to /me if already signed in)
     admin/page.tsx              the signup table
@@ -200,8 +201,11 @@ src/
       admin/                    members list + officer actions, LeetCode probe
   components/                   one file per section, plus RoadmapDialog,
                                 LinkLeetCode, PlacementPanel, MemberDashboard
+    motion/                     RevealObserver (scroll + pointer effects), HexField
+    Climb.tsx                   the pinned, scroll-driven rank ladder
   lib/
     content.ts                  all copy and data
+    hexgrid.ts                  the 250-cell honeycomb layout and tier colours
     curriculum.ts               GENERATED: the 250 problems
     placement-pool.ts           GENERATED, server-only: placement problems
     leetcode.ts                 the only module that talks to LeetCode
@@ -222,9 +226,25 @@ db/schema.sql
 - Mobile first. The desktop layout starts at the `lg:` breakpoint (1024px).
 - Colours and fonts are Tailwind theme tokens in `globals.css` — `bg-ink`,
   `text-gold`, `font-display` and so on. Change them in one place.
-- Sections fade in on scroll using CSS `animation-timeline: view()`. Browsers
-  without it simply show the content; nothing is ever stuck invisible.
-- `prefers-reduced-motion: reduce` turns all of it off.
+- The look is "league night": scoreboard capitals (Big Shoulders), paper and ink
+  sections, notched "ticket" corners, and a hexagon for every problem. The one
+  idea behind the motion is a judge's verdict: things arrive the way a
+  submission does (judging, then Accepted), not as generic fades.
+- The hero honeycomb (`HexField`) and the pinned rank ladder (`Climb`) draw the
+  club's real 250 problems from `lib/hexgrid.ts`, so the picture is the
+  curriculum, not decoration. The hero one is an illustration and says so.
+- Scroll reveals, split-word headlines, spotlight/tilt/magnetic hovers all come
+  from `RevealObserver` plus classes in `app/motion.css` (`.reveal`, `.rv-split`,
+  `.reveal-x`, `data-stagger`, `data-spot`, `data-tilt`, `data-magnetic`). Add
+  the class or attribute to an element; no per-component animation code.
+- Nothing is ever stuck invisible. Hidden-until-revealed styles only apply
+  under `html.js` (set by a tiny inline script), so with JavaScript off every
+  section is fully visible and the Climb becomes a plain list of ranks.
+- `prefers-reduced-motion: reduce` gives the same static result: no ambient
+  animation, no pinned scene, no pointer effects.
+- Grids that hold text set an explicit mobile track (`grid-cols-[minmax(0,1fr)]`).
+  An implicit `auto` track grows to fit unbreakable text (a long problem title
+  once pushed the hero past its gutter) and breaks the mobile layout.
 
 ## Deploying
 

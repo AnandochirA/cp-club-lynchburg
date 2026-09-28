@@ -32,12 +32,13 @@ export function Footer() {
         </nav>
         <div
           aria-hidden="true"
-          className="font-display -mb-3.5 mt-auto bg-clip-text pt-6 text-[clamp(3.5rem,13vw,9rem)] leading-[0.9] font-extrabold tracking-[-0.02em] whitespace-nowrap text-transparent"
-          style={{ backgroundImage: 'linear-gradient(180deg, #2A2B35 0%, rgba(42,43,53,0) 92%)' }}
+          className="wordmark rv-split font-display caps mt-auto -mb-[0.07em] pt-10 text-[clamp(3.4rem,14.4vw,13.2rem)] leading-[0.8] font-black tracking-[-0.01em] whitespace-nowrap"
         >
-          {footer.wordmark.map((w) => (
+          {footer.wordmark.map((w, i) => (
             <span key={w} className="block">
-              {w}
+              <span className="split-w" style={{ ['--w' as string]: i }}>
+                <span>{w}</span>
+              </span>
             </span>
           ))}
         </div>

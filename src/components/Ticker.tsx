@@ -1,29 +1,40 @@
-import { ticker } from '@/lib/content';
+import { LADDER, TIERS } from '@/lib/hexgrid';
 
-/** Endless scrolling strip of one-line reassurances. Decorative: the same
- *  claims appear as real text elsewhere on the page. */
+/**
+ * The scoreboard band under the hero. Real problem titles from the ladder, each
+ * with an "AC" verdict chip and its tier colour. Decorative and aria-hidden:
+ * the ladder itself is described properly further down the page.
+ */
+const ITEMS = LADDER.filter((_, k) => k % 7 === 2);
+
 export function Ticker() {
   const run = (key: string) => (
-    <span key={key} aria-hidden="true" className="flex shrink-0 items-center">
-      {ticker.map((t, i) => (
-        <span key={i} className="flex items-center">
-          <span className="font-mono px-3 text-[12.5px] whitespace-nowrap text-[#3A3C44] lg:text-[13px]">
-            {t}
+    <div key={key} aria-hidden="true" className="flex shrink-0 items-center">
+      {ITEMS.map((p) => (
+        <span key={p.slug} className="flex items-center gap-3 pr-10">
+          <span className="verdict on-ink h-[1.35rem] px-2 text-[10.5px]" data-v="ac">
+            AC
           </span>
-          <span className="text-crimson">&bull;</span>
+          <span className="font-display caps text-[22px] leading-none font-bold tracking-[0.02em] whitespace-nowrap text-white/90 lg:text-[26px]">
+            {p.title}
+          </span>
+          <span
+            className="size-2.5 shrink-0 rotate-45"
+            style={{ background: TIERS[p.tier].color }}
+          />
         </span>
       ))}
-    </span>
+    </div>
   );
   return (
     <div
-      className="-mx-5 overflow-hidden lg:-mx-30"
+      className="band relative z-1 overflow-hidden bg-[#0B0C10] py-4 lg:py-5"
       style={{
-        maskImage: 'linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)',
-        WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent)',
+        maskImage: 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)',
+        WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent)',
       }}
     >
-      <div className="anim-marquee flex w-max">
+      <div className="band-track">
         {run('a')}
         {run('b')}
       </div>

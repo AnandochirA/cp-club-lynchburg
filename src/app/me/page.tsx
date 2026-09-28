@@ -31,7 +31,7 @@ export default async function MePage() {
             ← Competitive Programming Club
           </Link>
         </div>
-        <h1 className="font-display m-0 text-[36px] leading-[1.05] font-extrabold tracking-[-0.015em] lg:text-[48px]">
+        <h1 className="font-display caps m-0 text-[64px] leading-[0.82] font-black lg:text-[96px]">
           {M.title}
         </h1>
         {broken ? (

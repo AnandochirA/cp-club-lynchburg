@@ -1,13 +1,20 @@
 import type { Metadata, Viewport } from 'next';
-import { Bricolage_Grotesque, Instrument_Sans, JetBrains_Mono } from 'next/font/google';
+import { Big_Shoulders, Instrument_Sans, JetBrains_Mono } from 'next/font/google';
 import { club } from '@/lib/content';
+import { RevealObserver } from '@/components/motion/RevealObserver';
 import './globals.css';
+import './motion.css';
 
-const bricolage = Bricolage_Grotesque({
+/** Scoreboard capitals: headlines, numerals, names. Condensed, so it needs to run large. */
+const shoulders = Big_Shoulders({
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
-  variable: '--font-bricolage',
+  // Variable weight AND optical size: the browser picks the display cut at large sizes.
+  weight: 'variable',
+  axes: ['opsz'],
+  variable: '--font-shoulders',
   display: 'swap',
+  // Next has no fallback metrics for this family, so it can't size-match a fallback; say so instead of warning.
+  adjustFontFallback: false,
 });
 
 const instrument = Instrument_Sans({
@@ -44,9 +51,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${bricolage.variable} ${instrument.variable} ${jetbrains.variable}`}
+      className={`${shoulders.variable} ${instrument.variable} ${jetbrains.variable}`}
+      // The inline script below adds `js` before paint; React must not treat that as a mismatch.
+      suppressHydrationWarning
     >
-      <body>{children}</body>
+      <head>
+        {/* Reveal animations only hide content once we know JavaScript will bring it back. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
+      </head>
+      <body>
+        {children}
+        <RevealObserver />
+      </body>
     </html>
   );
 }

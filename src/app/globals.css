@@ -26,7 +26,7 @@
   --color-band: #a3001e;
   --color-gold: #f6c453;
 
-  --font-display: var(--font-bricolage), system-ui, sans-serif;
+  --font-display: var(--font-shoulders), 'Arial Narrow', system-ui, sans-serif;
   --font-sans: var(--font-instrument), system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: var(--font-jetbrains), ui-monospace, 'SF Mono', Menlo, monospace;
 
@@ -62,10 +62,6 @@
   input::placeholder {
     color: #6b6d75;
     opacity: 1;
-  }
-  /* Display face is a variable font — this width works best for headings. */
-  .font-display {
-    font-stretch: 84%;
   }
 }
 
@@ -409,20 +405,6 @@
   animation: twinkle 3.4s ease-in-out infinite;
 }
 
-/* --------------------------------------------------------- scroll reveal
-   Where `animation-timeline: view()` is supported, elements fade up as they
-   enter. Everywhere else they are simply visible — never hidden with no way
-   back. Reveal.tsx adds a class fallback for browsers without it. */
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .reveal {
-      animation: rise 1s var(--ease-out-expo) both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 85%;
-    }
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -431,10 +413,5 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
-  }
-  .reveal {
-    opacity: 1 !important;
-    filter: none !important;
-    translate: none !important;
   }
 }

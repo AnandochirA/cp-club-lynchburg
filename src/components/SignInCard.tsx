@@ -13,9 +13,9 @@ import { LinkLeetCode } from './LinkLeetCode';
 export function SignInCard() {
   const router = useRouter();
   return (
-    <div className="card-d flex flex-col gap-5 rounded-[24px] p-6 lg:p-9">
+    <div className="notch border border-white/10 bg-[#101116] flex flex-col gap-5 p-6 lg:p-9">
       <div className="flex flex-col gap-2">
-        <h1 className="font-display m-0 text-[34px] leading-[1.05] font-extrabold tracking-[-0.015em] lg:text-[42px]">
+        <h1 className="font-display caps m-0 text-[56px] leading-[0.85] font-black lg:text-[72px]">
           {auth.signIn.title}
         </h1>
         <p className="m-0 text-[16px] leading-[1.5] text-muted">{auth.signIn.sub}</p>

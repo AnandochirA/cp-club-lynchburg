@@ -8,7 +8,7 @@ import { Icon } from './icons';
 import { RoadmapDialog } from './RoadmapDialog';
 
 const INPUT =
-  'field h-13 w-full min-w-0 rounded-xl bg-white px-3.5 font-sans text-[17px] text-ink-text';
+  'field h-13 w-full min-w-0 rounded-none bg-white px-3.5 font-sans text-[17px] text-ink-text';
 const SELECT = `${INPUT} appearance-none pr-11`;
 
 function Field({
@@ -112,13 +112,22 @@ export function JoinForm() {
       <>
         <div
           role="status"
-          className="mt-7 flex flex-col items-start gap-3 rounded-[22px] bg-white px-5.5 pt-6.5 pb-4.5 text-ink-text shadow-[0_34px_70px_-30px_rgba(40,0,8,0.75)] lg:px-8 lg:pt-8 lg:pb-6"
+          className="notch mt-7 flex flex-col items-start gap-3 bg-white px-5.5 pt-6.5 pb-4.5 text-ink-text lg:px-8 lg:pt-8 lg:pb-6"
         >
-          <span
-            aria-hidden="true"
-            className="gloss flex size-12 items-center justify-center rounded-full"
-          >
-            <Icon name="check" size={24} stroke={2.6} />
+          <span className="flex items-center gap-3" aria-hidden="true">
+            <span className="verdict verdict-stamp" data-v="ac">
+              <span className="tick">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="m5 12.5 4.5 4.5L19 7.5" />
+                </svg>
+              </span>
+              Accepted
+            </span>
+            <span className="tests">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <i key={i} style={{ ['--n' as string]: i }} />
+              ))}
+            </span>
           </span>
           <h3 className="font-display m-0 text-[30px] leading-[1.05] font-extrabold tracking-[-0.01em] lg:text-4xl">
             {existing ? J.existing.title : J.success.title}
@@ -187,7 +196,7 @@ export function JoinForm() {
   return (
     <form
       onSubmit={onSubmit}
-      className="mt-7 flex flex-col gap-4 rounded-[22px] bg-white px-5 pt-5.5 pb-5 text-ink-text shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_34px_70px_-30px_rgba(40,0,8,0.75)] lg:px-8 lg:pt-7 lg:pb-6.5"
+      className="notch mt-7 flex flex-col gap-4 bg-white px-5 pt-6 pb-5 text-ink-text lg:px-8 lg:pt-8 lg:pb-7"
     >
       <Field id="f-name" label={J.fields.name.label}>
         <input
@@ -247,7 +256,7 @@ export function JoinForm() {
       <button
         type="submit"
         disabled={state === 'sending'}
-        className="btn btn-primary mt-1 flex h-14 cursor-pointer items-center justify-center gap-2.5 rounded-[14px] border-0 font-sans text-[17px] font-semibold disabled:cursor-wait disabled:opacity-80"
+        className="btn btn-primary mt-1 flex h-14 cursor-pointer items-center justify-center gap-2.5 rounded-none border-0 font-sans text-[17px] font-semibold [clip-path:polygon(0_0,calc(100%-12px)_0,100%_12px,100%_100%,0_100%)] disabled:cursor-wait disabled:opacity-80"
       >
         <span className="sheen" aria-hidden="true" />
         {state === 'sending' ? J.submitting : J.submit}
@@ -292,7 +301,8 @@ export function Join() {
         }}
       />
 
-      <div className="relative mx-auto grid w-full max-w-[1200px] gap-8 lg:grid-cols-12 lg:gap-x-6">
+      <div aria-hidden="true" className="hex-bg-white hex-drift pointer-events-none absolute inset-0 opacity-60 [mask-image:linear-gradient(180deg,#000,transparent_80%)]" />
+      <div className="relative mx-auto grid grid-cols-[minmax(0,1fr)] w-full max-w-[1200px] gap-8 lg:grid-cols-12 lg:gap-x-6">
         <div className="flex flex-col lg:col-span-5">
           <div className="flex flex-col gap-3">
             <span className="font-mono text-[13px] tracking-[0.02em] text-white">
@@ -301,7 +311,7 @@ export function Join() {
             </span>
             <h2
               id="join-title"
-              className="font-display m-0 text-[clamp(2.6rem,7vw,4.5rem)] leading-none font-extrabold tracking-[-0.016em] text-balance"
+              className="font-display caps m-0 text-[clamp(3.6rem,11vw,7.6rem)] leading-[0.86] font-black tracking-[-0.004em] text-balance"
             >
               {J.title}
               <span className="text-ink">.</span>
