@@ -399,6 +399,9 @@
 .anim-open {
   animation: open-down 0.5s var(--ease-out-expo) both;
 }
+.anim-pop {
+  animation: pop 0.55s var(--ease-out-expo) both;
+}
 .anim-shine {
   animation: shine 4s ease-in-out infinite;
 }

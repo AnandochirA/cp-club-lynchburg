@@ -16,7 +16,7 @@ export type Signup = {
 };
 
 export type SubmitResult =
-  | { ok: true; duplicate?: boolean }
+  | { ok: true; duplicate?: boolean; claim?: string }
   | { ok: false; reason: 'duplicate' | 'invalid' | 'offline' | 'server' | 'preview' };
 
 type DocRef = { set(data: Record<string, unknown>): Promise<void> };
@@ -80,8 +80,8 @@ export async function submitSignup(data: Signup): Promise<SubmitResult> {
   }
 
   if (res.ok) {
-    const body = (await res.json().catch(() => ({}))) as { duplicate?: boolean };
-    return { ok: true, duplicate: body.duplicate };
+    const body = (await res.json().catch(() => ({}))) as { duplicate?: boolean; claim?: string };
+    return { ok: true, duplicate: body.duplicate, claim: body.claim };
   }
   if (res.status === 409) return { ok: false, reason: 'duplicate' };
   if (res.status === 400) return { ok: false, reason: 'invalid' };

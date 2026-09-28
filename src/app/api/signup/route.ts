@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
+import { checkAdminToken } from '@/lib/admin';
 import { db, type SignupRow } from '@/lib/db';
+import { hashToken, randomToken } from '@/lib/verify-code';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -40,7 +42,26 @@ export async function POST(req: Request) {
     `) as { id: number }[];
 
     // Already on the list: still a success for the person filling the form.
-    return NextResponse.json({ ok: true, duplicate: rows.length === 0 }, { status: 201 });
+    if (rows.length === 0) return NextResponse.json({ ok: true, duplicate: true }, { status: 201 });
+
+    // A brand-new signup gets a one-time claim, so the LeetCode account they
+    // link next can be tied to this row. It is random, stored only as a hash,
+    // single use and expires in an hour. Duplicates never get one (that would
+    // let anyone type someone else's email and claim their record).
+    // This must NEVER stop a signup from succeeding, so it is best-effort: if
+    // the members tables have not been created yet, the signup still works.
+    let claim: string | undefined;
+    try {
+      const token = randomToken();
+      await sql`
+        insert into signup_claims (token_hash, signup_id, expires_at)
+        values (${hashToken(token)}, ${rows[0].id}, now() + interval '1 hour')
+      `;
+      claim = token;
+    } catch (err) {
+      console.error('claim not created', err);
+    }
+    return NextResponse.json({ ok: true, duplicate: false, claim }, { status: 201 });
   } catch (err) {
     console.error('signup failed', err);
     return NextResponse.json({ error: 'Could not save that right now.' }, { status: 500 });
@@ -49,17 +70,13 @@ export async function POST(req: Request) {
 
 /** Read the list. Requires the admin token — never public. */
 export async function GET(req: Request) {
-  const token = process.env.ADMIN_TOKEN;
   const given =
     req.headers.get('authorization')?.replace(/^Bearer\s+/i, '') ??
     new URL(req.url).searchParams.get('token');
 
-  if (!token || token === 'change-me-to-something-long-and-random') {
-    return NextResponse.json({ error: 'ADMIN_TOKEN is not set.' }, { status: 503 });
-  }
-  if (given !== token) {
-    return NextResponse.json({ error: 'Not authorised.' }, { status: 401 });
-  }
+  const check = checkAdminToken(given);
+  if (check === 'unset') return NextResponse.json({ error: 'ADMIN_TOKEN is not set.' }, { status: 503 });
+  if (check === 'bad') return NextResponse.json({ error: 'Not authorised.' }, { status: 401 });
 
   try {
     const sql = db();

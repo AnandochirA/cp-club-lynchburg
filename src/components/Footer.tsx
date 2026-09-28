@@ -3,6 +3,11 @@ import { club, footer } from '@/lib/content';
 import logo from '@/assets/logo.png';
 
 export function Footer() {
+  // The static preview has no server, so there is no /me page to link to.
+  const links =
+    process.env.NEXT_PUBLIC_STATIC_PREVIEW === '1'
+      ? footer.links.filter((l) => l.href !== '/me')
+      : footer.links;
   return (
     <footer className="relative flex flex-col gap-4 overflow-hidden border-t border-[#1A1B22] bg-ink-deep px-5 pt-11 text-muted lg:px-30 lg:pt-16">
       <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4">
@@ -13,7 +18,7 @@ export function Footer() {
         <p className="m-0 text-[15px] leading-[1.5]">{footer.line}</p>
         <nav aria-label="Footer">
           <ul className="m-0 flex list-none flex-wrap gap-x-5 gap-y-0 p-0">
-            {footer.links.map((l) => (
+            {links.map((l) => (
               <li key={l.href}>
                 <a
                   href={l.href}

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { join as J } from '@/lib/content';
 import { submitSignup } from '@/lib/submit';
 import { Icon } from './icons';
+import { RoadmapDialog } from './RoadmapDialog';
 
 const INPUT =
   'field h-13 w-full min-w-0 rounded-xl bg-white px-3.5 font-sans text-[17px] text-ink-text';
@@ -62,6 +63,10 @@ function Select({
 export function JoinForm() {
   const [state, setState] = useState<'form' | 'sending' | 'done'>('form');
   const [error, setError] = useState<string | null>(null);
+  // The roadmap popup that opens the moment a signup succeeds.
+  const [roadmapOpen, setRoadmapOpen] = useState(false);
+  const [claim, setClaim] = useState<string | undefined>();
+  const [experience, setExperience] = useState('');
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -69,16 +74,20 @@ export function JoinForm() {
     setState('sending');
     setError(null);
 
-    const res = await submitSignup({
+    const answers = {
       name: String(fd.get('name') ?? ''),
       email: String(fd.get('email') ?? ''),
       classYear: String(fd.get('classYear') ?? ''),
       major: String(fd.get('major') ?? ''),
       experience: String(fd.get('experience') ?? ''),
-    });
+    };
+    const res = await submitSignup(answers);
 
     if (res.ok) {
+      setClaim(res.claim);
+      setExperience(answers.experience);
       setState('done');
+      setRoadmapOpen(true);
       return;
     }
     setState('form');
@@ -95,6 +104,7 @@ export function JoinForm() {
 
   if (state === 'done') {
     return (
+      <>
       <div
         role="status"
         className="mt-7 flex flex-col items-start gap-3 rounded-[22px] bg-white px-5.5 pt-6.5 pb-4.5 text-ink-text shadow-[0_34px_70px_-30px_rgba(40,0,8,0.75)] lg:px-8 lg:pt-8 lg:pb-6"
@@ -130,12 +140,28 @@ export function JoinForm() {
         </ol>
         <button
           type="button"
+          onClick={() => setRoadmapOpen(true)}
+          className="btn btn-primary flex h-12 cursor-pointer items-center justify-center gap-2 rounded-[14px] border-0 px-5 font-sans text-[15px] font-semibold text-white"
+        >
+          <span className="sheen" aria-hidden="true" />
+          {J.success.roadmap}
+          <Icon name="arrow" size={17} stroke={2.2} className="arrow" />
+        </button>
+        <button
+          type="button"
           onClick={() => setState('form')}
           className="min-h-11 cursor-pointer border-0 bg-transparent p-0 font-sans text-[15px] font-semibold text-crimson-lo"
         >
           {J.success.back}
         </button>
       </div>
+      <RoadmapDialog
+        open={roadmapOpen}
+        onClose={() => setRoadmapOpen(false)}
+        claim={claim}
+        experience={experience}
+      />
+      </>
     );
   }
 

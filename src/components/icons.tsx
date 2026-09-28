@@ -21,7 +21,9 @@ export type IconName =
   | 'badge'
   | 'person'
   | 'hexcheck'
-  | 'lock';
+  | 'lock'
+  | 'close'
+  | 'external';
 
 const PATHS: Record<IconName, React.ReactNode> = {
   arrow: (
@@ -142,6 +144,19 @@ const PATHS: Record<IconName, React.ReactNode> = {
     <>
       <rect x="5" y="10.5" width="14" height="10" rx="2.2" />
       <path d="M8.2 10.5V7.8a3.8 3.8 0 0 1 7.6 0v2.7" />
+    </>
+  ),
+  close: (
+    <>
+      <path d="m6 6 12 12" />
+      <path d="M18 6 6 18" />
+    </>
+  ),
+  external: (
+    <>
+      <path d="M14 4h6v6" />
+      <path d="M20 4 11 13" />
+      <path d="M18 14v4.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 4 18.5v-11A1.5 1.5 0 0 1 5.5 6H10" />
     </>
   ),
 };

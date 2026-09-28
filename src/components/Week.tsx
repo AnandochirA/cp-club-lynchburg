@@ -1,4 +1,4 @@
-import { week, rankSection } from '@/lib/content';
+import { week } from '@/lib/content';
 import { Icon } from './icons';
 import { Eyebrow, H2 } from './ui';
 

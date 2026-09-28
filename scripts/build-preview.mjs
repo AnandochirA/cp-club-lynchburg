@@ -21,13 +21,16 @@ for (const entry of await readdir(root)) {
   await cp(path.join(root, entry), path.join(stage, entry), { recursive: true });
 }
 
-// A static export cannot carry server-only routes.
-for (const dir of ['src/app/api', 'src/app/admin']) {
+// A static export cannot carry server-only routes. Add any new page that reads
+// the database or cookies (like /me) here, or this build breaks.
+for (const dir of ['src/app/api', 'src/app/admin', 'src/app/me']) {
   await rm(path.join(stage, dir), { recursive: true, force: true });
 }
 
+// On Windows `npx` is `npx.cmd`, which execFileSync can only run through a shell.
 execFileSync('npx', ['next', 'build'], {
   cwd: stage,
+  shell: process.platform === 'win32',
   stdio: 'inherit',
   env: { ...process.env, STATIC_EXPORT: '1', NEXT_PUBLIC_STATIC_PREVIEW: '1' },
 });

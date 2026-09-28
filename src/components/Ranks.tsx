@@ -70,6 +70,27 @@ function Steps() {
   );
 }
 
+/** The size of the whole climb, at a glance. */
+function Climb() {
+  return (
+    <div className="reveal mt-5 flex flex-col gap-3.5 rounded-[20px] border border-white/9 bg-white/2 px-5 py-4.5 lg:mt-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:px-8 lg:py-5">
+      <div className="flex flex-wrap gap-x-9 gap-y-3">
+        {R.climb.stats.map((s) => (
+          <div key={s.label} className="flex items-baseline gap-2.5">
+            <span className="font-display text-[34px] leading-none font-extrabold tracking-[-0.01em] lg:text-[40px]">
+              {s.value}
+            </span>
+            <span className="font-mono text-xs tracking-[0.08em] uppercase text-dim">{s.label}</span>
+          </div>
+        ))}
+      </div>
+      <p className="m-0 text-[15px] leading-[1.45] text-muted lg:max-w-[300px] lg:text-right">
+        {R.climb.line}
+      </p>
+    </div>
+  );
+}
+
 function TrackCard({ track }: { track: (typeof R.tracks)[number] }) {
   return (
     <div
@@ -121,6 +142,7 @@ function RankRow({ rank, size }: { rank: (typeof ranks)[number]; size: number })
             </span>
           )}
         </div>
+        <span className="font-mono text-[13px] font-medium text-dim">{rank.countLabel}</span>
         {rank.topics.length > 0 ? (
           <div className="mt-1 flex flex-wrap gap-2">
             {rank.topics.map((t) => (
@@ -177,19 +199,15 @@ function ExampleMember() {
         aria-valuemin={0}
         aria-valuemax={R.example.target}
         aria-valuenow={R.example.solved}
-        className="grid gap-1.25"
-        style={{ gridTemplateColumns: `repeat(${R.example.target}, minmax(0, 1fr))` }}
+        className="h-2.5 overflow-hidden rounded-full bg-white/8"
       >
-        {Array.from({ length: R.example.target }, (_, i) => (
-          <span
-            key={i}
-            className="h-2.5 rounded-full"
-            style={{
-              background:
-                i < R.example.solved ? SKIN[cur.key].pip : 'rgba(255,255,255,0.08)',
-            }}
-          />
-        ))}
+        <div
+          className="h-full rounded-full"
+          style={{
+            width: `${(R.example.solved / R.example.target) * 100}%`,
+            background: SKIN[cur.key].pip,
+          }}
+        />
       </div>
       <p className="m-0 text-base leading-[1.4] text-muted">
         <strong className="font-bold text-text">
@@ -289,6 +307,7 @@ export function Ranks() {
         </div>
 
         <Steps />
+        <Climb />
 
         {/* the climb */}
         <div className="relative mt-11 lg:mt-19">
@@ -326,6 +345,7 @@ export function Ranks() {
                   <h3 className="font-display m-0 text-[28px] leading-none font-extrabold tracking-[-0.01em]">
                     {r.name}
                   </h3>
+                  <span className="font-mono text-[13px] font-medium text-dim">{r.countLabel}</span>
                   {r.earnedOnly ? (
                     <>
                       <span

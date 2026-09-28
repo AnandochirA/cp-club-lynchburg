@@ -1,3 +1,4 @@
+import { checkAdminToken } from '@/lib/admin';
 import { db, type SignupRow } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -13,12 +14,12 @@ export default async function Admin({
   searchParams: Promise<{ token?: string }>;
 }) {
   const { token } = await searchParams;
-  const expected = process.env.ADMIN_TOKEN;
+  const check = checkAdminToken(token);
 
-  if (!expected || expected === 'change-me-to-something-long-and-random') {
+  if (check === 'unset') {
     return <Shell>Set <code>ADMIN_TOKEN</code> in your environment first.</Shell>;
   }
-  if (token !== expected) {
+  if (check === 'bad') {
     return <Shell>Add <code>?token=…</code> to this URL to see the list.</Shell>;
   }
 
@@ -73,7 +74,8 @@ export default async function Admin({
         </div>
       )}
       <p className="font-mono mt-8 text-xs text-dim">
-        CSV: <code>/api/signup?token=…</code> returns the same rows as JSON.
+        JSON: <code>/api/signup?token=…</code> returns the same rows. Members and rank tools:{' '}
+        <code>/api/admin/members</code> (Authorization: Bearer header).
       </p>
     </main>
   );

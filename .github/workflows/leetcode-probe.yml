@@ -1,0 +1,37 @@
+# M0 feasibility check, part 2: can a GitHub Actions runner reach LeetCode?
+# Datacenter IPs are the ones LeetCode is most likely to refuse, so this is
+# worth knowing before anything depends on scheduled syncing from here.
+#
+# Run it by hand: Actions tab -> "LeetCode reachability probe" -> Run workflow.
+# It asks about a problem, not a person, 12 times, a second apart.
+name: LeetCode reachability probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send 12 small requests and count the status codes
+        run: |
+          ok=0; blocked=0; other=0
+          for i in $(seq 1 12); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' -X POST https://leetcode.com/graphql \
+              -H 'content-type: application/json' \
+              -H 'referer: https://leetcode.com' \
+              -H 'user-agent: cp-club-lynchburg/1.0 (student club progress sync)' \
+              -d '{"query":"query{question(titleSlug:\"two-sum\"){questionFrontendId}}"}')
+            echo "request $i -> HTTP $code"
+            case "$code" in
+              200) ok=$((ok+1)) ;;
+              403|429) blocked=$((blocked+1)) ;;
+              *) other=$((other+1)) ;;
+            esac
+            sleep 1
+          done
+          echo "ok=$ok blocked=$blocked other=$other"
+          echo "### LeetCode probe from a GitHub runner" >> "$GITHUB_STEP_SUMMARY"
+          echo "ok: $ok, blocked (403/429): $blocked, other: $other" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$ok" -eq 0 ]; then echo "LeetCode never answered this runner."; exit 1; fi
