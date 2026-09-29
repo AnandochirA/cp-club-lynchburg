@@ -458,6 +458,16 @@ export const apiErrors: Record<string, string> = {
   signed_out: 'Your session ended. Verify your LeetCode account again to continue.',
   offline: 'Couldn’t reach the server. Check your connection and try again.',
   server: 'Something went wrong on our side. Please try again in a moment.',
+  // study rooms
+  locked: 'You haven’t reached this rank yet.',
+  muted: 'An officer has muted you from chat for a while.',
+  empty: 'Write something first.',
+  too_long: 'That’s too long for one message. Keep it under 1,200 characters.',
+  looks_like_code:
+    'That looks like a full solution — describe your approach in words instead. Short one-line snippets are fine.',
+  chat_too_fast: 'You’re posting a little fast. Wait a few seconds and try again.',
+  message_gone: 'That message is already gone.',
+  not_found: 'That wasn’t found.',
 };
 
 export const roadmap = {
@@ -577,4 +587,44 @@ export const memberPage = {
   divineReady: 'All 30 Hards are done. Send an officer your assessment proof to earn Divine.',
   rankedUp: (name: string) => `You ranked up to ${name}!`,
   open: 'Open',
+};
+
+/* -------------------------------------------------------------- study rooms
+ * One chat room per rank. You unlock a room by reaching it, the same gate as
+ * its problem set — so nothing in a room is ever a spoiler for someone who
+ * has not climbed there yet, and everyone in it has earned the right to be. */
+export const roomsPage = {
+  eyebrow: 'no solutions, just method',
+  title: 'Study rooms.',
+  sub: 'One room per rank. Talk through how you think about a problem — the idea, the trick, where you got stuck. Not the answer.',
+  roomLabel: (rank: string) => `${rank} room`,
+  locked: 'Locked',
+  lockedNote: (rank: string) => `Reach ${rank} to unlock this room.`,
+  unlockedAt: (rank: string) => `Unlocked at ${rank}`,
+  empty: 'No messages yet. Be the first to say something.',
+  messages: (n: number) => `${n} ${n === 1 ? 'message' : 'messages'}`,
+  open: 'Open room',
+  back: 'Study rooms',
+};
+
+export const room = {
+  rules: {
+    title: 'Talk method, not answers.',
+    body: 'Describe your approach in your own words — the idea, the trick, the complexity, where you got stuck. No pasted solutions or code dumps; short one-line snippets are fine. Officers remove anything that breaks this.',
+    dismiss: 'Got it',
+  },
+  composerPlaceholder: (rank: string) => `Say something in the ${rank} room…`,
+  send: 'Send',
+  sending: 'Sending…',
+  removed: 'Message removed',
+  removedByAdmin: 'Removed by an officer',
+  deleteOwn: 'Delete',
+  deleteConfirm: 'Delete this message? This can’t be undone.',
+  loadOlder: 'Load earlier messages',
+  loading: 'Loading…',
+  jumpToLatest: 'Jump to latest',
+  newMessages: (n: number) => `${n} new ${n === 1 ? 'message' : 'messages'}`,
+  you: 'You',
+  offlineNote: 'Messages stop updating while you’re offline.',
+  charsLeft: (n: number) => `${n} left`,
 };

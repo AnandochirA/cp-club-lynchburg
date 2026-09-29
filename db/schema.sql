@@ -123,3 +123,28 @@ insert into sync_state (id) values (1) on conflict do nothing;
 -- Sign up vs sign in. A 'signup' challenge creates the member when the code
 -- checks out; a 'signin' challenge only ever signs in to an existing member.
 alter table link_challenges add column if not exists intent text not null default 'signup';
+
+-- =====================================================================
+-- Study rooms: one chat room per rank. A member reads and posts in a room
+-- once they have REACHED that rank (same gate as the problem sets), so a
+-- room is never spoiled for someone who has not climbed to it yet, and
+-- everyone who can see it has already earned the right to.
+-- =====================================================================
+
+alter table members add column if not exists last_chat_at timestamptz;
+alter table members add column if not exists chat_muted_until timestamptz;
+
+create table if not exists chat_messages (
+  id          bigserial   primary key,
+  rank        text        not null
+                        check (rank in ('guardian', 'archon', 'legend', 'ancient', 'divine')),
+  member_id   bigint      not null references members (id) on delete cascade,
+  body        text        not null,
+  created_at  timestamptz not null default now(),
+  -- A soft delete: the row (and its id, so ids stay a stable cursor) stays,
+  -- the body is cleared, and who removed it is kept for moderation history.
+  deleted_at  timestamptz,
+  deleted_by  text                                                    -- author | admin
+);
+create index if not exists chat_messages_room_idx on chat_messages (rank, id desc);
+create index if not exists chat_messages_member_idx on chat_messages (member_id, id desc);

@@ -15,6 +15,7 @@ import { Momentum } from './dash/Momentum';
 import { MyGrid } from './dash/MyGrid';
 import { PlayerCard } from './dash/PlayerCard';
 import { ProblemList } from './dash/ProblemList';
+import { RoomTeaser } from './dash/RoomTeaser';
 import { Topics } from './dash/Topics';
 import { UpNext } from './dash/UpNext';
 import { PlacementPanel } from './PlacementPanel';
@@ -180,6 +181,10 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             divineReady={aimingAtDivine && left.size === 0}
             onHover={setHl}
           />
+        </div>
+
+        <div className="dx" style={{ ['--dx' as string]: 6 }}>
+          <RoomTeaser room={me.rank} />
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-12 lg:gap-5">

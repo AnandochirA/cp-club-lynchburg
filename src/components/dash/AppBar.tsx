@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import logo from '@/assets/logo.png';
-import { club, memberPage as M } from '@/lib/content';
+import { club, memberPage as M, roomsPage as R } from '@/lib/content';
 import type { MemberView } from '@/lib/member-view';
 import { ago } from '@/lib/momentum';
 import { useNow } from './hooks';
@@ -40,6 +40,12 @@ export function AppBar({
           <i className="live" data-state={state} aria-hidden="true" />
           {M.lastSynced}: {when}
         </span>
+        <Link href="/rooms" className="bar-btn no-underline">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M4 4h16v12H8l-4 4z" />
+          </svg>
+          {R.back}
+        </Link>
         <button type="button" onClick={onSync} disabled={busy !== null} data-busy={busy === 'sync' ? '1' : undefined} className="bar-btn primary">
           <svg className="sync-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <path d="M21 12a9 9 0 0 1-15.5 6.2L3 16" />

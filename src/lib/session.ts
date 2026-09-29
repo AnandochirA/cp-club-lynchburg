@@ -23,6 +23,8 @@ export type MemberRow = {
   last_seen_ts: Date | string | null;
   gap_possible: boolean;
   created_at: Date | string;
+  last_chat_at: Date | string | null;
+  chat_muted_until: Date | string | null;
 };
 
 export type Session = { member: MemberRow; verifiedAt: Date };

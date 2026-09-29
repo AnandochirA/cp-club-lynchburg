@@ -112,6 +112,29 @@ from the bottom, capped at Ancient. One attempt per 30 days. Placement can only
 an officer set by hand. Legend or higher is flagged for an optional officer
 re-test (the code proves control of an account, not who was typing).
 
+## Study rooms
+
+One chat room per rank (`/rooms`), for talking through *how* to think about a
+problem — never the answer. A member reads and posts in a room once they have
+**reached** that rank, the same gate the problem sets already use, so a room is
+never spoiled for someone who has not climbed there yet and a higher-ranked
+member can still drop in to help below. Messages update live by polling (every
+4 s while the tab is visible, paused otherwise) — no websocket infrastructure,
+consistent with how the rest of the app talks to serverless Postgres.
+
+"No solutions" is enforced two ways: `src/lib/chat-rules.ts` is a best-effort,
+dependency-free detector (a fenced code block over a couple of lines, or a run
+of code-shaped lines, is refused with a message asking for words instead — see
+its unit tests for what does and does not trip it) shared verbatim by the
+composer (instant, before a request is even sent) and the API route (the real
+gate); and by officer moderation, since no heuristic is perfect. A message is
+capped at 1,200 characters and throttled to one every 3 seconds per member (an
+atomic conditional `UPDATE`, the same pattern the LeetCode-call throttle uses,
+so it is safe across serverless instances that share no memory). A deleted
+message — by its author, any time, or by an officer — becomes a tombstone: the
+row and its id stay, so nothing else in an open list shifts, but the text is
+actually cleared in the database, not just hidden.
+
 ### Officer tools
 
 Header-authenticated only (a `?token=` query string leaks into logs):
@@ -124,6 +147,16 @@ curl -H "Authorization: Bearer $ADMIN_TOKEN" https://YOUR-SITE/api/admin/members
 curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
   -d '{"action":"set_rank","username":"their_leetcode_name","rank":"legend"}' \
   https://YOUR-SITE/api/admin/members
+
+# study rooms: recent messages (add ?rank=guardian to filter to one room)
+curl -H "Authorization: Bearer $ADMIN_TOKEN" https://YOUR-SITE/api/admin/chat
+
+# actions: delete (any message) | mute (default 24h, or pass "minutes") | unmute
+curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
+  -d '{"action":"delete","id":123}' https://YOUR-SITE/api/admin/chat
+curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
+  -d '{"action":"mute","username":"their_leetcode_name","minutes":1440}' \
+  https://YOUR-SITE/api/admin/chat
 ```
 
 `revoke_solve` is a tombstone, so the next sync does not quietly bring the solve
@@ -194,12 +227,18 @@ src/
     me/page.tsx                 a member's rank and progress
     signin/page.tsx             sign in (redirects to /me if already signed in)
     admin/page.tsx              the signup table
+    rooms/page.tsx              the five study rooms, locked ones dimmed
+    rooms/[rank]/page.tsx       one room: locked screen, or the live feed
+    chat.css                    the study rooms, keyed to --tier
     api/
       signup/                   POST = join, GET = the list (token-gated)
       leetcode/{link,verify}/   the About-me code proof (intent: signup | signin)
       me/                       who am I, sync now, sign out, delete my data
       placement/[action]/       start | poll | finish
-      admin/                    members list + officer actions, LeetCode probe
+      chat/[rank]/              GET (cursor-paged list) + POST (send)
+      chat/[rank]/[id]/         DELETE (your own message)
+      admin/                    members list + officer actions, LeetCode probe,
+                                chat moderation
   components/                   one file per section, plus RoadmapDialog,
                                 LinkLeetCode, PlacementPanel, MemberDashboard
     motion/                     RevealObserver (scroll + pointer effects), HexField
@@ -207,7 +246,8 @@ src/
     MemberDashboard.tsx         /me: sync, rank-up and the state everything below shares
     dash/                       the dashboard's parts: PlayerCard, MyGrid (the map and
                                 the climb replay), UpNext, Momentum, Topics, ProblemList,
-                                RecentLog, Ceremony, AppBar, Odometer
+                                RecentLog, Ceremony, AppBar, Odometer, RoomTeaser
+    rooms/RoomView.tsx          the study room engine: polling, composer, delete
   lib/
     content.ts                  all copy and data
     hexgrid.ts                  the 250-cell honeycomb layout and tier colours
@@ -217,6 +257,9 @@ src/
     leetcode.ts                 the only module that talks to LeetCode
     sync.ts                     pull + store submissions, circuit breaker
     placement.ts                the placement engine (rules in placement-logic.ts)
+    chat.ts                     rooms: access, list/post/delete, moderation
+    chat-rules.ts                dependency-free, unit-tested: length cap and
+                                the no-solutions detector, shared by client + server
     session.ts, admin.ts, request.ts, verify-code.ts
     db.ts                       Postgres connection
     submit.ts                   where a signup goes
