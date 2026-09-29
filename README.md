@@ -135,6 +135,22 @@ message — by its author, any time, or by an officer — becomes a tombstone: t
 row and its id stay, so nothing else in an open list shifts, but the text is
 actually cleared in the database, not just hidden.
 
+A message has one of three `kind`s:
+
+- **message** — a normal post, optionally with a **tagged problem** (the 📎
+  button in the composer): one problem from *that room's own set*, chosen from
+  a searchable picker, shown as a small linked chip under the message.
+  Validated server-side against `curriculum[room]`, so a Guardian cannot tag an
+  Archon problem into the Guardian room.
+- **progress** — "Share my progress." The composer sends nothing but a
+  `kind`; every number in the resulting caption and its `meta` snapshot
+  (solved/total in your current rank, week's pace, streak) is computed fresh
+  from your real solve history on the server and frozen into the message —
+  the client can never hand it a fake count.
+- **announcement** — officer-only (see below), pinned at the top of one room,
+  never mixed into the scrolling feed. `member_id` is null (nobody's message
+  to misattribute); the byline reads as the club, not a person.
+
 ### Officer tools
 
 Header-authenticated only (a `?token=` query string leaks into logs):
@@ -151,11 +167,14 @@ curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: applicati
 # study rooms: recent messages (add ?rank=guardian to filter to one room)
 curl -H "Authorization: Bearer $ADMIN_TOKEN" https://YOUR-SITE/api/admin/chat
 
-# actions: delete (any message) | mute (default 24h, or pass "minutes") | unmute
+# actions: delete (any message) | mute (default 24h, or pass "minutes") | unmute | announce
 curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
   -d '{"action":"delete","id":123}' https://YOUR-SITE/api/admin/chat
 curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
   -d '{"action":"mute","username":"their_leetcode_name","minutes":1440}' \
+  https://YOUR-SITE/api/admin/chat
+curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
+  -d '{"action":"announce","rank":"legend","body":"Study room moves to Hobbs 301 this week."}' \
   https://YOUR-SITE/api/admin/chat
 ```
 

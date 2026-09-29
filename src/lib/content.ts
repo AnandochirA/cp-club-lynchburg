@@ -466,6 +466,7 @@ export const apiErrors: Record<string, string> = {
   looks_like_code:
     'That looks like a full solution — describe your approach in words instead. Short one-line snippets are fine.',
   chat_too_fast: 'You’re posting a little fast. Wait a few seconds and try again.',
+  bad_problem: 'That problem isn’t in this room’s set.',
   message_gone: 'That message is already gone.',
   not_found: 'That wasn’t found.',
 };
@@ -627,4 +628,12 @@ export const room = {
   you: 'You',
   offlineNote: 'Messages stop updating while you’re offline.',
   charsLeft: (n: number) => `${n} left`,
+  attachProblem: 'Tag a problem',
+  attachProblemSearch: 'Search this room’s problems…',
+  attachProblemNone: 'No problem matches that search.',
+  removeAttachedProblem: 'Remove',
+  shareProgress: 'Share my progress',
+  sharingProgress: 'Sharing…',
+  announcement: 'Announcement',
+  pinnedFromClub: 'From the club',
 };

@@ -148,3 +148,18 @@ create table if not exists chat_messages (
 );
 create index if not exists chat_messages_room_idx on chat_messages (rank, id desc);
 create index if not exists chat_messages_member_idx on chat_messages (member_id, id desc);
+
+-- A message can be a plain message, a member sharing a progress snapshot
+-- (numbers computed server-side, never taken from the client), or an
+-- officer's announcement (no member behind it, so member_id is nullable).
+-- `problem_slug` is an optional tag on a 'message' row — "here's the one I'm
+-- stuck on" — validated against that room's own set. `meta` is free-form
+-- (the progress snapshot's numbers); nothing sensitive, so it is cleared on
+-- delete along with the body, not kept around.
+alter table chat_messages add column if not exists kind text not null default 'message'
+  check (kind in ('message', 'progress', 'announcement'));
+alter table chat_messages add column if not exists problem_slug text;
+alter table chat_messages add column if not exists meta jsonb;
+alter table chat_messages alter column member_id drop not null;
+create index if not exists chat_messages_announce_idx on chat_messages (rank, id desc)
+  where kind = 'announcement' and deleted_at is null;

@@ -441,6 +441,259 @@
   clip-path: polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%);
 }
 
+/* ------------------------------------------------------------ announcements
+   Officer-only, pinned above the scrolling feed — never mixed into it, so a
+   notice is never buried by chat volume and never mistaken for a member's
+   own word. A flat crimson mark instead of a rank medal is what tells them
+   apart at a glance. */
+.announce-banner {
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 10px 16px 4px;
+}
+@media (min-width: 1024px) {
+  .announce-banner {
+    padding: 14px 40px 4px;
+  }
+}
+.announce-item {
+  display: flex;
+  gap: 11px;
+  padding: 10px 12px;
+  background: color-mix(in srgb, var(--tier) 10%, rgba(255, 255, 255, 0.035));
+  border-left: 2px solid var(--tier);
+  animation: rise 0.5s var(--ease-out-expo) both;
+}
+.announce-avatar {
+  background: linear-gradient(160deg, var(--tier), color-mix(in srgb, var(--tier) 55%, #0b0c10));
+  color: #0b0c10;
+}
+.announce-label {
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--tier);
+}
+
+/* -------------------------------------------------------- progress shares */
+.msg[data-kind='progress'] {
+  background: color-mix(in srgb, var(--tier) 6%, transparent);
+}
+.msg[data-kind='progress']:hover {
+  background: color-mix(in srgb, var(--tier) 10%, transparent);
+}
+.msg-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 15px;
+  height: 15px;
+  color: #0b0c10;
+  background: var(--tier);
+  border-radius: 50%;
+}
+.msg-bar {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: 4px;
+  margin-top: 7px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.msg-bar i {
+  display: block;
+  height: 100%;
+  background: var(--tier);
+  transition: width 0.6s var(--ease-out-expo);
+}
+
+/* --------------------------------------------------------- tagged problem */
+.msg-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 7px;
+  padding: 5px 10px;
+  font: 12px var(--font-mono);
+  color: rgba(255, 255, 255, 0.75);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: border-color 0.2s;
+}
+.msg-tag:hover {
+  color: #fff;
+  border-color: color-mix(in srgb, var(--tier) 55%, transparent);
+}
+.msg-tag .dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  clip-path: polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%);
+}
+.msg-tag-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.msg-tag-diff {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* -------------------------------------------------------------- composer + */
+.composer-rule-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.composer-rule-row .composer-rule {
+  margin: 0;
+}
+.share-progress-btn {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  font: 600 11.5px var(--font-mono);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background-color 0.2s;
+}
+.share-progress-btn:hover:not(:disabled) {
+  color: var(--tier);
+  border-color: color-mix(in srgb, var(--tier) 55%, transparent);
+}
+.share-progress-btn:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.attach-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 8px;
+  padding: 6px 8px 6px 10px;
+  font: 13px var(--font-sans);
+  color: rgba(255, 255, 255, 0.85);
+  background: color-mix(in srgb, var(--tier) 12%, rgba(255, 255, 255, 0.05));
+  border: 1px solid color-mix(in srgb, var(--tier) 35%, transparent);
+  animation: rise 0.3s var(--ease-out-expo) both;
+}
+.attach-chip .dot {
+  width: 7px;
+  height: 7px;
+  flex-shrink: 0;
+  clip-path: polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%);
+}
+.attach-chip button {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+.attach-chip button:hover {
+  color: #ff8fa1;
+}
+
+.composer-attach {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: rgba(255, 255, 255, 0.5);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  transition: color 0.2s;
+}
+.composer-attach:hover,
+.composer-attach[data-on='1'] {
+  color: var(--tier);
+}
+
+.attach-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  width: min(340px, 84vw);
+  max-height: 320px;
+  overflow: hidden;
+  background: #0e0f14;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  animation: rise 0.2s var(--ease-out-expo) both;
+}
+.attach-search {
+  flex-shrink: 0;
+  padding: 10px 12px;
+  font: 13.5px var(--font-sans);
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  outline: 0;
+}
+.attach-search::placeholder {
+  color: rgba(255, 255, 255, 0.4);
+}
+.attach-list {
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+}
+.attach-empty {
+  padding: 14px 10px;
+  font: 13px var(--font-sans);
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+}
+.attach-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  height: 34px;
+  padding: 0 8px;
+  font: 13px var(--font-sans);
+  color: rgba(255, 255, 255, 0.85);
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+}
+.attach-row:hover {
+  background: color-mix(in srgb, var(--tier) 16%, transparent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .room-shell *,
   .room-card {

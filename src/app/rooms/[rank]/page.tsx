@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import '../../chat.css';
 import { Icon } from '@/components/icons';
-import { canUseRoom, listRoom } from '@/lib/chat';
+import { canUseRoom, listPinned, listRoom } from '@/lib/chat';
 import { rankName, ranks, roomsPage as M } from '@/lib/content';
 import type { RankKey } from '@/lib/curriculum';
 import { isRankKey } from '@/lib/progress';
@@ -83,6 +83,8 @@ export default async function RoomPage({ params }: { params: Promise<{ rank: str
 }
 
 async function RoomRoot({ rank, memberId }: { rank: RankKey; memberId: number }) {
-  const { messages, hasMore } = await listRoom(rank, memberId);
-  return <RoomView room={rank} memberId={memberId} initialMessages={messages} initialHasMore={hasMore} />;
+  const [{ messages, hasMore }, pinned] = await Promise.all([listRoom(rank, memberId), listPinned(rank)]);
+  return (
+    <RoomView room={rank} memberId={memberId} initialMessages={messages} initialHasMore={hasMore} initialPinned={pinned} />
+  );
 }

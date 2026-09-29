@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import '../../app/dash.css';
 import '../../app/chat.css';
 import { Icon, RankMark } from '../icons';
 import { apiDelete, apiGet, apiPost } from '@/lib/client-api';
 import { apiErrors, rankName, room as R, ranks } from '@/lib/content';
-import type { RankKey } from '@/lib/curriculum';
+import { curriculum, type RankKey } from '@/lib/curriculum';
 import { looksLikeCode, normalize, MAX_LEN } from '@/lib/chat-rules';
 import type { ChatMessage } from '@/lib/chat';
 import { TIERS } from '@/lib/hexgrid';
@@ -16,7 +16,15 @@ const MARK_BY_KEY = Object.fromEntries(ranks.map((r) => [r.key, r.mark])) as Rec
 const POLL_MS = 4000;
 const NEAR_BOTTOM_PX = 140;
 
-function Avatar({ rank, size = 34 }: { rank: RankKey; size?: number }) {
+function Avatar({ rank, size = 34 }: { rank: RankKey | null; size?: number }) {
+  if (rank === null) {
+    // An officer's announcement: the club's own mark, not a member's medal.
+    return (
+      <span className="hex-tile announce-avatar flex shrink-0 items-center justify-center" style={{ width: size, height: size }} aria-hidden="true">
+        <Icon name="badge" size={Math.round(size * 0.5)} stroke={2.2} />
+      </span>
+    );
+  }
   const idx = ranks.findIndex((r) => r.key === rank);
   const tier = TIERS[Math.max(0, idx)];
   return (
@@ -30,12 +38,41 @@ function Avatar({ rank, size = 34 }: { rank: RankKey; size?: number }) {
   );
 }
 
+/** A message's tagged problem, or a progress share's mini stat bar — the
+ * small structured bit under a message's text, when it has one. */
+function MessageExtra({ msg, room }: { msg: ChatMessage; room: RankKey }) {
+  if (msg.kind === 'progress' && msg.meta) {
+    const solved = Number(msg.meta.solved ?? 0);
+    const total = Number(msg.meta.total ?? 0) || 1;
+    return (
+      <span className="msg-bar" aria-hidden="true">
+        <i style={{ width: `${Math.min(100, (solved / total) * 100)}%` }} />
+      </span>
+    );
+  }
+  if (msg.kind === 'message' && msg.problemSlug) {
+    const p = curriculum[room].find((x) => x.slug === msg.problemSlug);
+    if (!p) return null;
+    return (
+      <a href={`https://leetcode.com/problems/${p.slug}/`} target="_blank" rel="noopener noreferrer" className="msg-tag">
+        <span className="dot" style={{ background: TIERS[ranks.findIndex((r) => r.key === room)].color }} />
+        <span className="msg-tag-title">{p.title}</span>
+        <span className="msg-tag-diff">{p.difficulty.toLowerCase()}</span>
+        <Icon name="external" size={11} stroke={2.2} />
+      </a>
+    );
+  }
+  return null;
+}
+
 function MessageRow({
   msg,
+  room,
   mineId,
   onDelete,
 }: {
   msg: ChatMessage;
+  room: RankKey;
   mineId: number;
   onDelete: (id: number) => void;
 }) {
@@ -62,13 +99,27 @@ function MessageRow({
   }
 
   return (
-    <li className="msg" data-id={msg.id} data-mine={mine ? '1' : undefined} data-pending={msg.id < 0 ? '1' : undefined}>
+    <li className="msg" data-id={msg.id} data-kind={msg.kind} data-mine={mine ? '1' : undefined} data-pending={msg.id < 0 ? '1' : undefined}>
       <Avatar rank={msg.rank} />
       <div className="msg-body-col">
         <div className="msg-meta">
           <span className="msg-name">{mine ? R.you : msg.displayName}</span>
-          <span className="msg-time" title={new Date(msg.createdAt).toLocaleString()}>
-            {msg.id < 0 ? R.sending : now === null ? '' : ago(new Date(msg.createdAt).getTime(), now)}
+          {msg.kind === 'progress' && (
+            <span className="msg-badge">
+              <Icon name="trophy" size={10} stroke={2.4} />
+            </span>
+          )}
+          {/* toLocaleString() can use a different default locale/ICU data in
+              Node than in the browser, which is a well-known source of a
+              hydration mismatch on a title attribute — harmless (it is a
+              hover tooltip, never the first-paint content), so it is told
+              to trust the client's value instead of warning about it. */}
+          <span
+            className="msg-time"
+            title={new Date(msg.createdAt).toLocaleString()}
+            suppressHydrationWarning
+          >
+            {msg.id < 0 ? (msg.kind === 'progress' ? R.sharingProgress : R.sending) : now === null ? '' : ago(new Date(msg.createdAt).getTime(), now)}
           </span>
           {mine && msg.id > 0 && (
             <button type="button" className="msg-del" onClick={() => onDelete(msg.id)} aria-label={R.deleteOwn}>
@@ -77,8 +128,93 @@ function MessageRow({
           )}
         </div>
         <p className="msg-body m-0">{msg.body}</p>
+        <MessageExtra msg={msg} room={room} />
       </div>
     </li>
+  );
+}
+
+function AnnouncementBanner({ pinned }: { pinned: ChatMessage[] }) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    setNow(Date.now());
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  if (pinned.length === 0) return null;
+  return (
+    <div className="announce-banner" role="region" aria-label={R.announcement}>
+      {pinned.map((a) => (
+        <div key={a.id} className="announce-item">
+          <span className="hex-tile announce-avatar flex shrink-0 items-center justify-center" aria-hidden="true">
+            <Icon name="badge" size={14} stroke={2.2} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-baseline gap-2">
+              <span className="announce-label">{R.pinnedFromClub}</span>
+              <span className="msg-time">{now === null ? '' : ago(new Date(a.createdAt).getTime(), now)}</span>
+            </div>
+            <p className="m-0 text-[14.5px] leading-[1.45] text-white/90">{a.body}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** A popover to tag one of this room's problems onto the message you are
+ * about to send — "here's the one I'm stuck on" without typing it out. */
+function AttachPicker({
+  room,
+  onPick,
+  onClose,
+}: {
+  room: RankKey;
+  onPick: (slug: string) => void;
+  onClose: () => void;
+}) {
+  const [q, setQ] = useState('');
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+    };
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [onClose]);
+
+  const needle = q.trim().toLowerCase();
+  const items = curriculum[room].filter(
+    (p) => needle === '' || p.title.toLowerCase().includes(needle) || String(p.id) === needle || p.topic.toLowerCase().includes(needle),
+  );
+
+  return (
+    <div ref={ref} className="attach-pop">
+      <input
+        autoFocus
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={R.attachProblemSearch}
+        className="attach-search"
+      />
+      <ul className="attach-list">
+        {items.length === 0 && <li className="attach-empty">{R.attachProblemNone}</li>}
+        {items.slice(0, 60).map((p) => (
+          <li key={p.slug}>
+            <button type="button" className="attach-row" onClick={() => onPick(p.slug)}>
+              <span className="font-mono w-9 shrink-0 text-[11.5px] text-dim">{p.id}</span>
+              <span className="min-w-0 flex-1 truncate">{p.title}</span>
+              <span className="font-mono shrink-0 text-[11px] text-dim">{p.difficulty.toLowerCase()}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -87,20 +223,26 @@ export function RoomView({
   memberId,
   initialMessages,
   initialHasMore,
+  initialPinned,
 }: {
   room: RankKey;
   memberId: number;
   initialMessages: ChatMessage[];
   initialHasMore: boolean;
+  initialPinned: ChatMessage[];
 }) {
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages);
+  const [pinned, setPinned] = useState<ChatMessage[]>(initialPinned);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
+  const [sharingProgress, setSharingProgress] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [pendingNew, setPendingNew] = useState(0);
   const [atBottom, setAtBottom] = useState(true);
+  const [attachOpen, setAttachOpen] = useState(false);
+  const [attachedSlug, setAttachedSlug] = useState<string | null>(null);
 
   const listRef = useRef<HTMLUListElement>(null);
   const maxIdRef = useRef(0);
@@ -132,17 +274,21 @@ export function RoomView({
 
   /**
    * Polling. Cursor-based (only ids newer than the highest one seen), so it
-   * stays cheap in a quiet room. The tradeoff: if a message you already have
-   * open gets deleted (by its author elsewhere, or by an officer), your tab
-   * will not see it turn into a tombstone until you revisit the room — a
-   * fresh load always shows the true state, this just is not instant for a
-   * tab that is already sitting on the old content. Good enough without
-   * standing up a push channel for a club chat's traffic.
+   * stays cheap in a quiet room. Pinned announcements are re-checked on every
+   * poll too (cheap, capped at 3), so an officer's notice shows up promptly.
+   * The tradeoff: if a message you already have open gets deleted (by its
+   * author elsewhere, or by an officer), your tab will not see it turn into
+   * a tombstone until you revisit the room — a fresh load always shows the
+   * true state, this just is not instant for a tab already sitting on the
+   * old content. Good enough without standing up a push channel for a club
+   * chat's traffic.
    */
   const poll = useCallback(async () => {
     const after = maxIdRef.current;
-    const res = await apiGet<{ ok: true; messages: ChatMessage[] }>(`/api/chat/${room}?after=${after}`);
-    if (!res.ok || res.data.messages.length === 0) return;
+    const res = await apiGet<{ ok: true; messages: ChatMessage[]; pinned: ChatMessage[] }>(`/api/chat/${room}?after=${after}`);
+    if (!res.ok) return;
+    setPinned(res.data.pinned);
+    if (res.data.messages.length === 0) return;
     setMessages((prev) => {
       const known = new Set(prev.map((m) => m.id));
       const fresh = res.data.messages.filter((m) => !known.has(m.id));
@@ -198,6 +344,7 @@ export function RoomView({
   const codeish = draftNorm !== '' && looksLikeCode(draftNorm);
   const tooLong = draftNorm.length > MAX_LEN;
   const canSend = draftNorm !== '' && !tooLong && !codeish && !sending;
+  const taggedProblem = attachedSlug ? curriculum[room].find((p) => p.slug === attachedSlug) : null;
 
   const send = async () => {
     if (!canSend) return;
@@ -209,6 +356,9 @@ export function RoomView({
       memberId,
       displayName: R.you,
       rank: room,
+      kind: 'message',
+      problemSlug: attachedSlug,
+      meta: null,
       createdAt: new Date().toISOString(),
       body: draftNorm,
       deleted: false,
@@ -217,15 +367,53 @@ export function RoomView({
     };
     setMessages((prev) => [...prev, optimistic]);
     setDraft('');
+    setAttachedSlug(null);
     requestAnimationFrame(() => scrollToBottom());
 
-    const res = await apiPost<{ ok: true; message: ChatMessage }>(`/api/chat/${room}`, { body: draftNorm });
+    const res = await apiPost<{ ok: true; message: ChatMessage }>(`/api/chat/${room}`, {
+      body: draftNorm,
+      problemSlug: optimistic.problemSlug ?? undefined,
+    });
     setSending(false);
     if (!res.ok) {
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setDraft(draftNorm);
+      setAttachedSlug(optimistic.problemSlug);
       setError(apiErrors[res.error] ?? apiErrors.server);
       areaRef.current?.focus();
+      return;
+    }
+    setMessages((prev) => prev.map((m) => (m.id === tempId ? res.data.message : m)));
+    maxIdRef.current = Math.max(maxIdRef.current, res.data.message.id);
+  };
+
+  const shareProgress = async () => {
+    if (sharingProgress) return;
+    setError(null);
+    setSharingProgress(true);
+    const tempId = -Date.now();
+    const optimistic: ChatMessage = {
+      id: tempId,
+      memberId,
+      displayName: R.you,
+      rank: room,
+      kind: 'progress',
+      problemSlug: null,
+      meta: null,
+      createdAt: new Date().toISOString(),
+      body: '',
+      deleted: false,
+      deletedBy: null,
+      mine: true,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    requestAnimationFrame(() => scrollToBottom());
+
+    const res = await apiPost<{ ok: true; message: ChatMessage }>(`/api/chat/${room}`, { kind: 'progress' });
+    setSharingProgress(false);
+    if (!res.ok) {
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setError(apiErrors[res.error] ?? apiErrors.server);
       return;
     }
     setMessages((prev) => prev.map((m) => (m.id === tempId ? res.data.message : m)));
@@ -264,6 +452,8 @@ export function RoomView({
         <b className="hex-bg-ink" />
       </div>
 
+      <AnnouncementBanner pinned={pinned} />
+
       <ul ref={listRef} className="msg-list" onScroll={onScroll} aria-label={`${rankName(room)} room messages`}>
         {hasMore && (
           <li className="msg-load">
@@ -274,7 +464,7 @@ export function RoomView({
         )}
         {messages.length === 0 && !hasMore && <li className="msg-empty">{R.rules.body}</li>}
         {messages.map((m) => (
-          <MessageRow key={m.id} msg={m} mineId={memberId} onDelete={remove} />
+          <MessageRow key={m.id} msg={m} room={room} mineId={memberId} onDelete={remove} />
         ))}
       </ul>
 
@@ -292,11 +482,51 @@ export function RoomView({
       )}
 
       <div className="composer-wrap">
-        <p className="composer-rule">
-          <Icon name="lock" size={12} stroke={2.2} />
-          {R.rules.body}
-        </p>
+        <div className="composer-rule-row">
+          <p className="composer-rule">
+            <Icon name="lock" size={12} stroke={2.2} />
+            {R.rules.body}
+          </p>
+          <button type="button" onClick={shareProgress} disabled={sharingProgress} className="share-progress-btn">
+            <Icon name="trophy" size={13} stroke={2.2} />
+            {sharingProgress ? R.sharingProgress : R.shareProgress}
+          </button>
+        </div>
+
+        {taggedProblem && (
+          <div className="attach-chip">
+            <span className="dot" style={{ background: TIERS[ranks.findIndex((r) => r.key === room)].color }} />
+            <span className="min-w-0 flex-1 truncate">{taggedProblem.title}</span>
+            <button type="button" onClick={() => setAttachedSlug(null)} aria-label={R.removeAttachedProblem}>
+              <Icon name="close" size={11} stroke={2.6} />
+            </button>
+          </div>
+        )}
+
         <div className="composer">
+          <div className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setAttachOpen((v) => !v)}
+              aria-label={R.attachProblem}
+              aria-expanded={attachOpen}
+              className="composer-attach"
+              data-on={attachedSlug ? '1' : undefined}
+            >
+              <Icon name="code" size={17} stroke={2.1} />
+            </button>
+            {attachOpen && (
+              <AttachPicker
+                room={room}
+                onPick={(slug) => {
+                  setAttachedSlug(slug);
+                  setAttachOpen(false);
+                  areaRef.current?.focus();
+                }}
+                onClose={() => setAttachOpen(false)}
+              />
+            )}
+          </div>
           <textarea
             ref={areaRef}
             value={draft}

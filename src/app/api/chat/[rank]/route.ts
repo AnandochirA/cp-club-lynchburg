@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { ChatError, canUseRoom, listRoom, postToRoom } from '@/lib/chat';
+import { ChatError, canUseRoom, listPinned, listRoom, postToRoom } from '@/lib/chat';
 import { isRankKey } from '@/lib/progress';
 import { guardPost, readJson, str } from '@/lib/request';
 import { getSession } from '@/lib/session';
@@ -24,16 +24,22 @@ export async function GET(req: Request, ctx: { params: Promise<{ rank: string }>
   if (!session) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
 
   const unlocked = canUseRoom(session.member.rank, rank);
-  if (!unlocked) return NextResponse.json({ ok: true, unlocked: false, messages: [], hasMore: false });
+  if (!unlocked) return NextResponse.json({ ok: true, unlocked: false, messages: [], hasMore: false, pinned: [] });
 
   const url = new URL(req.url);
   try {
-    const { messages, hasMore } = await listRoom(rank, session.member.id, {
-      after: toInt(url.searchParams.get('after')),
-      before: toInt(url.searchParams.get('before')),
-      limit: toInt(url.searchParams.get('limit')),
-    });
-    return NextResponse.json({ ok: true, unlocked: true, messages, hasMore });
+    // Fetched alongside every request, including polls: an officer's
+    // announcement should show up promptly, not only after a reload.
+    // Cheap — a partial index, capped at 3 rows.
+    const [{ messages, hasMore }, pinned] = await Promise.all([
+      listRoom(rank, session.member.id, {
+        after: toInt(url.searchParams.get('after')),
+        before: toInt(url.searchParams.get('before')),
+        limit: toInt(url.searchParams.get('limit')),
+      }),
+      listPinned(rank),
+    ]);
+    return NextResponse.json({ ok: true, unlocked: true, messages, hasMore, pinned });
   } catch (err) {
     console.error('chat list failed', err);
     return NextResponse.json({ error: 'server' }, { status: 500 });
@@ -53,9 +59,17 @@ export async function POST(req: Request, ctx: { params: Promise<{ rank: string }
 
   const json = await readJson(req);
   if (!json) return NextResponse.json({ error: 'empty' }, { status: 400 });
+  // Only 'message' and 'progress' are postable by a member here — an
+  // 'announcement' has no member behind it, and only comes from /api/admin/chat.
+  const kind = json.kind === 'progress' ? 'progress' : 'message';
+  const problemSlug = str(json.problemSlug, 100);
 
   try {
-    const message = await postToRoom(session, rank, str(json.body, 4000));
+    const message = await postToRoom(session, rank, {
+      kind,
+      body: str(json.body, 4000),
+      problemSlug: problemSlug || undefined,
+    });
     return NextResponse.json({ ok: true, message });
   } catch (err) {
     if (err instanceof ChatError) {

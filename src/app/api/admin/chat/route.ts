@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminDenied, checkAdminHeader } from '@/lib/admin';
-import { deleteMessage } from '@/lib/chat';
+import { deleteMessage, postAnnouncement, ChatError } from '@/lib/chat';
 import { db } from '@/lib/db';
 import { isRankKey } from '@/lib/progress';
 import { readJson, str } from '@/lib/request';
@@ -16,7 +16,9 @@ export const dynamic = 'force-dynamic';
  *   curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" -H "content-type: application/json" \
  *        -d '{"action":"delete","id":123}' https://SITE/api/admin/chat
  *
- * Actions: delete, mute, unmute.
+ * Actions: delete, mute, unmute, announce. `announce` pins a notice at the
+ * top of one room (`{"action":"announce","rank":"legend","body":"..."}`) —
+ * remove it later the same way as any message, with `delete`.
  */
 
 export async function GET(req: Request) {
@@ -33,18 +35,19 @@ export async function GET(req: Request) {
     // A deleted row's body is already cleared in the database (a real
     // delete of the content, not just a hidden flag), so this shows the
     // same thing a member would see, plus who removed it and when.
+    // left join: an announcement has no member behind it (member_id is null).
     const rows = rank
       ? await sql`
           select c.id, c.rank, c.body, c.created_at, c.deleted_at, c.deleted_by,
-                 m.leetcode_username as username, m.display_name
-          from chat_messages c join members m on m.id = c.member_id
+                 c.kind, c.problem_slug, m.leetcode_username as username, m.display_name
+          from chat_messages c left join members m on m.id = c.member_id
           where c.rank = ${rank}
           order by c.id desc limit ${limit}
         `
       : await sql`
           select c.id, c.rank, c.body, c.created_at, c.deleted_at, c.deleted_by,
-                 m.leetcode_username as username, m.display_name
-          from chat_messages c join members m on m.id = c.member_id
+                 c.kind, c.problem_slug, m.leetcode_username as username, m.display_name
+          from chat_messages c left join members m on m.id = c.member_id
           order by c.id desc limit ${limit}
         `;
     return NextResponse.json({ count: rows.length, messages: rows });
@@ -71,6 +74,18 @@ export async function POST(req: Request) {
       const removed = await deleteMessage(id, { admin: true });
       if (!removed) return NextResponse.json({ error: 'message_gone' }, { status: 404 });
       return NextResponse.json({ ok: true });
+    }
+
+    if (action === 'announce') {
+      const rank = str(body.rank, 20);
+      if (!isRankKey(rank)) return NextResponse.json({ error: 'bad_rank' }, { status: 400 });
+      try {
+        const message = await postAnnouncement(rank, str(body.body, 4000));
+        return NextResponse.json({ ok: true, message });
+      } catch (err) {
+        if (err instanceof ChatError) return NextResponse.json({ error: err.code }, { status: err.status });
+        throw err;
+      }
     }
 
     if (action === 'mute' || action === 'unmute') {
