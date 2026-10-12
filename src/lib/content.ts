@@ -132,8 +132,8 @@ export const ranks: Rank[] = [
     mark: 'shield',
     problems: size('guardian'),
     countLabel: `${size('guardian')} problems`,
-    topics: ['Python syntax', 'arrays', 'strings'],
-    tag: 'Just getting started.',
+    topics: ['arrays & hashing', 'two pointers', 'stack'],
+    tag: 'Mediums from day one.',
   },
   {
     key: 'archon',
@@ -142,7 +142,7 @@ export const ranks: Rank[] = [
     mark: 'chevrons',
     problems: size('archon'),
     countLabel: `${size('archon')} problems`,
-    topics: ['two pointers', 'stack', 'linked list'],
+    topics: ['sliding window', 'binary search', 'linked list'],
   },
   {
     key: 'legend',
@@ -151,7 +151,7 @@ export const ranks: Rank[] = [
     mark: 'star',
     problems: size('legend'),
     countLabel: `${size('legend')} problems`,
-    topics: ['binary search', 'sliding window'],
+    topics: ['trees', 'tries', 'heap'],
   },
   {
     key: 'ancient',
@@ -160,7 +160,7 @@ export const ranks: Rank[] = [
     mark: 'gem',
     problems: size('ancient'),
     countLabel: `${size('ancient')} problems`,
-    topics: ['trees', 'tries', 'heap', 'backtracking', 'graphs', 'dynamic programming'],
+    topics: ['backtracking', 'graphs', 'dynamic programming', 'greedy', 'intervals', 'math & bits'],
   },
   {
     key: 'divine',
@@ -220,7 +220,7 @@ export const rankSection = {
       key: 'beginner',
       name: 'Beginner Track',
       range: 'Guardian → Archon',
-      body: 'Just finished intro programming? Start here. We teach the core ideas step by step.',
+      body: 'Comfortable with the basics? Start here: Blind 75 and NeetCode 150 Mediums, pattern by pattern.',
       cta: 'Sign up as a beginner',
       color: '#F2A866',
     },
@@ -299,7 +299,7 @@ export const faqSection = {
 export const faq: [string, string][] = [
   [
     'Do I need to be good at coding?',
-    'No. The beginner track starts from the basics and goes step by step. Never coded? Come anyway and we’ll help you get started.',
+    'You should know one language and basic data structures. From there the ladder is interview-grade: about 80% Mediums from Guardian on, built for people preparing for big-tech assessments and technical rounds.',
   ],
   [
     'How many problems is it, really?',
@@ -327,7 +327,7 @@ export const faq: [string, string][] = [
   ],
   [
     'What language do we use?',
-    'Guardian starts with Python. After that, use whatever you’re fastest in. C++ and Python are the most common.',
+    'Whatever you’re fastest in. Python and C++ are the most common in interviews.',
   ],
   ['How much time does it take?', 'About ten problems a week. There’s no attendance requirement.'],
   ['Does it cost anything?', 'No. It’s free.'],

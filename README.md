@@ -54,15 +54,19 @@ Both refuse to answer without the token, and the page is marked `noindex`.
 
 ## Ranks, placement and tracking
 
-Five ranks, **250 problems**, about ten a week:
+Five ranks, **250 problems**, about ten a week. The ladder is interview prep:
+every free Blind 75 and NeetCode 150 problem (minus a few warm-up Easies), plus
+Mediums and Hards common in big-tech assessments. The mix is fixed at
+**13 Easy / 200 Medium / 37 Hard** (5% / 80% / 15%), and the build script
+refuses to write the curriculum if it drifts.
 
-| Rank     | Problems | Topics                                                     |
-| -------- | -------- | ---------------------------------------------------------- |
-| Guardian | 50       | Python syntax, arrays, strings                             |
-| Archon   | 50       | two pointers, stack, linked list                           |
-| Legend   | 50       | binary search, sliding window                              |
-| Ancient  | 70       | trees, tries, heap, backtracking, graphs, dynamic programming |
-| Divine   | 30       | LeetCode Hards, plus proof of a passed company assessment (approved by an officer) |
+| Rank     | Problems | E / M / H  | Topics                                                     |
+| -------- | -------- | ---------- | ---------------------------------------------------------- |
+| Guardian | 50       | 3 / 45 / 2 | arrays & hashing, two pointers, stack                      |
+| Archon   | 50       | 4 / 42 / 4 | sliding window, binary search, linked list                 |
+| Legend   | 50       | 4 / 45 / 1 | trees, tries, heap                                         |
+| Ancient  | 70       | 2 / 68 / 0 | backtracking, graphs, 1-D/2-D DP, greedy, intervals, math & bits |
+| Divine   | 30       | 0 / 0 / 30 | LeetCode Hards, plus proof of a passed company assessment (approved by an officer) |
 
 **Sign up and sign in.** *Sign up* is the form on the home page (name, email,
 class year, major, experience), then a popup that walks through the roadmap →
