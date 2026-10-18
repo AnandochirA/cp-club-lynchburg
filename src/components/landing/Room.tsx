@@ -27,12 +27,14 @@ export function Room() {
           <figcaption className="font-mono mb-3 text-[11.5px] tracking-[0.12em] text-ink-muted uppercase">
             {R.barLabel} · {TOTAL_MINUTES} min
           </figcaption>
-          <ol className="rm-bar m-0 list-none p-0">
+          <ol className="rm-bar m-0 list-none p-0" style={{ ['--t' as string]: TOTAL_MINUTES, ['--n' as string]: STAGES.length }}>
             {STAGES.map((s, i) => (
               <li key={s.id} className="rm-seg" data-code={s.id === 'code' ? '1' : undefined} style={{ ['--m' as string]: s.minutes }}>
-                <span className="rm-n font-mono">{i + 1}</span>
+                <span className="rm-top font-mono">
+                  <span className="rm-n">{i + 1}</span>
+                  <span className="rm-min">{s.minutes} min</span>
+                </span>
                 <span className="rm-name">{s.title}</span>
-                <span className="rm-min font-mono">{s.minutes} min</span>
                 <span className="rm-goal">{s.goal}</span>
               </li>
             ))}

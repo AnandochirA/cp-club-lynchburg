@@ -23,9 +23,9 @@ export function Hero() {
             {hero.eyebrow}
           </span>
 
-          <h1 id="hero-title" className="hero-h font-display caps m-0 font-black">
+          <h1 id="hero-title" className="hero-h font-display caps m-0 self-stretch font-black">
             <span className="block overflow-hidden pt-[0.04em]">
-              <span className="anim-mask relative" style={{ animationDelay: '0.2s' }}>
+              <span className="anim-mask relative" style={{ animationDelay: '0.2s', display: 'inline-block' }}>
                 {first}
                 <span className="hero-ac font-mono" aria-hidden="true">
                   <Icon name="check" size={12} stroke={3.4} />

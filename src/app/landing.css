@@ -360,6 +360,7 @@
   position: relative;
   display: grid;
   grid-template-columns: 22px minmax(0, 1fr) auto;
+  grid-template-areas: 'n name min';
   align-items: baseline;
   gap: 4px 10px;
   padding: 12px 14px;
@@ -377,15 +378,21 @@
   width: calc(var(--m) / 20 * 100%);
   background: rgba(255, 255, 255, 0.08);
 }
+.rm-top {
+  display: contents;
+}
 .rm-n {
+  grid-area: n;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.5);
 }
 .rm-name {
+  grid-area: name;
   font-weight: 600;
   font-size: 15px;
 }
 .rm-min {
+  grid-area: min;
   font-size: 11.5px;
   color: rgba(255, 255, 255, 0.7);
 }
@@ -400,14 +407,18 @@
     flex-direction: row;
     height: 200px;
   }
+  .rm-bar {
+    gap: 3px;
+  }
+  /* exact widths, so the bar really is to scale (padding and gaps included) */
   .rm-seg {
-    flex: var(--m) 1 0;
+    flex: 0 0 calc((100% - (var(--n) - 1) * 3px) * var(--m) / var(--t));
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 6px;
+    gap: 8px;
     min-width: 0;
-    padding: 14px 12px;
+    padding: 12px 10px;
     overflow: hidden;
     transition: background-color 0.3s ease;
   }
@@ -420,18 +431,22 @@
   .rm-seg[data-code]:hover {
     background: #c4002a;
   }
+  .rm-top {
+    display: flex;
+    justify-content: space-between;
+    align-self: stretch;
+    gap: 6px;
+  }
   .rm-name {
     font-family: var(--font-display);
-    font-size: 22px;
+    font-size: 20px;
     font-weight: 800;
     line-height: 0.95;
     text-transform: uppercase;
   }
-  .rm-min {
-    margin-top: auto;
-  }
   .rm-goal {
     display: block;
+    margin-top: auto;
     font-size: 13px;
     line-height: 1.4;
     color: rgba(255, 255, 255, 0.72);
@@ -447,7 +462,8 @@
   .rm-brace {
     display: block;
     position: relative;
-    width: calc(var(--b) / var(--t) * 100%);
+    /* the five steps before Code, plus the four gaps between them */
+    width: calc((100% - 18px) * var(--b) / var(--t) + 12px);
     height: 34px;
     margin-top: 10px;
     border: 2px solid var(--color-ink-text);

@@ -29,7 +29,7 @@ export function Ladder() {
               <li key={r.key} className="ld-rank">
                 <span aria-hidden="true" className="hex-tile size-4 shrink-0" style={{ background: TIERS[i].onPaper }} />
                 <span className="font-display caps text-[22px] leading-none font-extrabold">{r.name}</span>
-                <span className="min-w-0 flex-1 truncate text-[14px] text-ink-muted">{r.topics.length ? r.topics.join(' · ') : r.tag}</span>
+                <span className="min-w-0 flex-1 truncate text-[14px] text-ink-muted">{r.topics.length ? r.topics.slice(0, 3).join(' · ') : r.tag}</span>
                 <span className="font-mono shrink-0 text-[12px] text-ink-muted">{r.problems}</span>
               </li>
             ))}

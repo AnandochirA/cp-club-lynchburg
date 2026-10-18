@@ -10,7 +10,7 @@ export const club = {
   name: 'Competitive Programming',
   full: 'Competitive Programming',
   school: 'University of Lynchburg',
-  tagline: 'interview prep @ lynchburg',
+  tagline: 'interview prep',
 };
 
 export const nav = [
@@ -371,7 +371,7 @@ export const faq: [string, string][] = [
 
 export const join = {
   eyebrow: 'sign up',
-  title: 'Start your first round.',
+  title: 'Start your first round',
   sub: 'A few quick questions, then link your LeetCode account.',
   subNowrap: 'No experience needed.',
   fields: {
