@@ -28,17 +28,22 @@ export function Signals() {
                 </span>
                 {S.judge.verdict}
               </span>
+              <span className="sg-tests tests" aria-hidden="true">
+                {[0, 1, 2, 3, 4].map((i) => (
+                  <i key={i} style={{ ['--n' as string]: i }} />
+                ))}
+              </span>
               <span className="font-mono text-[12.5px] text-white/55">{S.judge.meta}</span>
             </div>
           </div>
 
           <div className="reveal sg-card">
             <span className="font-mono text-[11.5px] tracking-[0.12em] text-ink-muted uppercase">{S.room}</span>
-            <ul className="m-0 flex list-none flex-col p-0">
+            <ul data-stagger className="m-0 flex list-none flex-col p-0">
               {RUBRIC.map((r) => {
                 const seen = r.key === S.seenByJudge;
                 return (
-                  <li key={r.key} className="sg-row" data-seen={seen ? '1' : undefined}>
+                  <li key={r.key} className="reveal sg-row" data-seen={seen ? '1' : undefined}>
                     <div className="flex min-w-0 flex-col gap-1.5">
                       <h3 className="font-display caps m-0 text-[28px] leading-[0.95] font-extrabold lg:text-[34px]">{r.title}</h3>
                       <p className="m-0 text-[15px] leading-[1.5] text-ink-muted">

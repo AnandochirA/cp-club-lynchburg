@@ -552,3 +552,294 @@
     animation: none;
   }
 }
+
+/* ==========================================================================
+   MOTION
+   The site's motion idea is a judge: idle, then judging, then a verdict.
+   Each section gets one moment of it, played once as it arrives: verdicts
+   stamp down, the round plays across its bar, the steps join up, the
+   numbers count. Hidden states only apply with JavaScript (html.js), and
+   all of it collapses to the end state under reduced motion.
+   ========================================================================== */
+
+/* ------------------------------------------------------------------ hero */
+/* a crimson honeycomb that shows only around the cursor */
+.hero-hexlit {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='55.43' height='96' viewBox='0 0 55.43 96' fill='none' stroke='rgba(228,0,43,0.45)' stroke-width='1.2'%3E%3Cpolygon points='27.71,0 55.43,16 55.43,48 27.71,64 0,48 0,16'/%3E%3Cline x1='27.71' y1='64' x2='27.71' y2='96'/%3E%3C/svg%3E");
+  background-size: 55.43px 96px;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  -webkit-mask-image: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), #000, transparent 72%);
+  mask-image: radial-gradient(240px circle at var(--mx, 50%) var(--my, 50%), #000, transparent 72%);
+}
+#hero:hover .hero-hexlit {
+  opacity: 1;
+}
+
+/* the AC chip lands just after the headline does */
+.hero-ac-in {
+  animation: hero-ac 0.7s var(--ease-spring) 1.05s both;
+}
+@keyframes hero-ac {
+  from {
+    opacity: 0;
+    scale: 0.2;
+    rotate: -25deg;
+  }
+}
+
+/* as you scroll away, the headline lifts off faster than the round */
+@supports (animation-timeline: scroll()) {
+  @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
+    .hero-par-a,
+    .hero-par-b {
+      animation: hero-par-a linear both;
+      animation-timeline: scroll(root);
+      animation-range: 0 90vh;
+    }
+    .hero-par-b {
+      animation-name: hero-par-b;
+    }
+  }
+}
+@keyframes hero-par-a {
+  to {
+    translate: 0 -120px;
+    opacity: 0.15;
+  }
+}
+@keyframes hero-par-b {
+  to {
+    translate: 0 -50px;
+  }
+}
+
+/* the stamp hits hard enough to shake the card */
+.mr[data-hit] {
+  animation: mr-hit 0.5s ease-out 0.12s;
+}
+@keyframes mr-hit {
+  20% {
+    translate: -4px 3px;
+  }
+  40% {
+    translate: 3px -2px;
+  }
+  60% {
+    translate: -2px 1px;
+  }
+  80% {
+    translate: 1px 0;
+  }
+}
+
+/* --------------------------------------------------------------- signals */
+html.js .sg-judge .verdict {
+  opacity: 0;
+}
+html.js .sg-judge.is-in .verdict {
+  animation: stamp 0.55s var(--ease-spring) 0.25s both;
+}
+html.js .sg-judge .tests i {
+  animation: none;
+}
+html.js .sg-judge.is-in .tests i {
+  animation: test-pass 0.3s var(--ease-out-expo) calc(var(--n, 0) * 140ms + 700ms) forwards;
+}
+/* each row's tag is stamped once the row arrives */
+html.js .sg-row .sg-tag {
+  opacity: 0;
+}
+html.js .sg-row.is-in .sg-tag {
+  animation: sg-stamp 0.5s var(--ease-spring) calc(var(--i, 0) * 140ms + 450ms) both;
+}
+@keyframes sg-stamp {
+  from {
+    opacity: 0;
+    scale: 1.9;
+    rotate: -12deg;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    rotate: -2deg;
+  }
+}
+
+/* ------------------------------------------------------------ the round */
+/* the round plays across its bar at 70ms a minute, so Code takes its share */
+html.js .rm-seg {
+  clip-path: inset(0 100% 0 0);
+  transition:
+    clip-path calc(var(--m) * 70ms) linear calc(var(--s) * 70ms + 300ms),
+    background-color 0.3s ease;
+}
+html.js .rm-fig.is-in .rm-seg {
+  clip-path: inset(0 0 0 0);
+}
+.rm-head {
+  display: none;
+}
+@property --rm-min {
+  syntax: '<integer>';
+  inherits: false;
+  initial-value: 0;
+}
+@media (min-width: 1024px) {
+  html.js .rm-head {
+    position: absolute;
+    top: -26px;
+    bottom: -8px;
+    left: 0;
+    display: block;
+    width: 2px;
+    background: var(--color-crimson);
+    opacity: 0;
+    pointer-events: none;
+  }
+  /* the playhead's clock: an animated integer, printed as a counter */
+  html.js .rm-head::before {
+    content: counter(rm) ' min';
+    counter-reset: rm var(--rm-min);
+    position: absolute;
+    top: 0;
+    left: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-crimson);
+    white-space: nowrap;
+  }
+  html.js .rm-fig.is-in .rm-head {
+    animation: rm-head 3150ms linear 0.3s both;
+  }
+  html.js .rm-fig.is-in .rm-head::before {
+    animation: rm-min 3150ms linear 0.3s both;
+  }
+  html.js .rm-brace {
+    transform-origin: left center;
+    scale: 0 1;
+    transition: scale 0.9s var(--ease-out-expo) 1.75s;
+  }
+  html.js .rm-brace span {
+    opacity: 0;
+    transition: opacity 0.6s ease 2.2s;
+  }
+  html.js .rm-fig.is-in .rm-brace {
+    scale: 1 1;
+  }
+  html.js .rm-fig.is-in .rm-brace span {
+    opacity: 1;
+  }
+}
+@keyframes rm-head {
+  0% {
+    left: 0;
+    opacity: 1;
+  }
+  94% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 2px);
+    opacity: 0;
+  }
+}
+@keyframes rm-min {
+  from {
+    --rm-min: 0;
+  }
+  to {
+    --rm-min: 45;
+  }
+}
+
+/* cards lean towards the cursor; their hexagon turns a sixth on hover */
+.tilt-card .spin-hex,
+.tilt-card .spin-hex svg {
+  transition: rotate 0.7s var(--ease-spring);
+}
+.tilt-card:hover .spin-hex {
+  rotate: 60deg;
+}
+.tilt-card:hover .spin-hex svg {
+  rotate: -60deg;
+}
+
+/* ------------------------------------------------------------ the steps */
+/* one rule joins the steps up, then each step's dot lands in turn */
+.hw-step,
+.hw-step:last-child {
+  border-left-color: transparent;
+  border-top-color: transparent;
+}
+.hw-steps::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: linear-gradient(180deg, var(--color-crimson), rgba(255, 255, 255, 0.16) 40%);
+  transform-origin: top;
+}
+html.js .hw-steps::before {
+  scale: 1 0;
+  transition: scale 1.8s var(--ease-out-expo) 0.2s;
+}
+html.js .hw-steps.is-in::before {
+  scale: 1 1;
+}
+html.js .hw-dot {
+  scale: 0;
+  transition: scale 0.6s var(--ease-spring) calc(var(--i, 0) * 280ms + 350ms);
+}
+html.js .hw-steps.is-in .hw-dot {
+  scale: 1;
+}
+@media (min-width: 1024px) {
+  .hw-steps::before {
+    right: 0;
+    bottom: auto;
+    width: auto;
+    height: 1px;
+    background: linear-gradient(90deg, var(--color-crimson), rgba(255, 255, 255, 0.16) 60%);
+    transform-origin: left;
+  }
+  html.js .hw-steps::before {
+    scale: 0 1;
+  }
+  html.js .hw-steps.is-in::before {
+    scale: 1 1;
+  }
+  html.js .hw-num {
+    translate: 0 30px;
+    opacity: 0;
+    transition:
+      translate 0.9s var(--ease-out-expo) calc(var(--i, 0) * 280ms + 450ms),
+      opacity 0.9s ease calc(var(--i, 0) * 280ms + 450ms);
+  }
+  html.js .hw-steps.is-in .hw-num {
+    translate: 0 0;
+    opacity: 1;
+  }
+}
+
+/* ----------------------------------------------------------- the ladder */
+html.js .ld-rank .ld-hex {
+  scale: 0;
+  rotate: -120deg;
+  transition:
+    scale 0.7s var(--ease-spring) calc(var(--i, 0) * 90ms + 250ms),
+    rotate 0.7s var(--ease-spring) calc(var(--i, 0) * 90ms + 250ms);
+}
+html.js .ld-rank.is-in .ld-hex {
+  scale: 1;
+  rotate: 0deg;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-hexlit,
+  .rm-head {
+    display: none !important;
+  }
+}

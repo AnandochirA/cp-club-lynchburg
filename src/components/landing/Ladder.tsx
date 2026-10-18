@@ -1,5 +1,6 @@
 import { ladderSection as L, ranks } from '@/lib/content';
 import { TIERS } from '@/lib/hexgrid';
+import { CountUp } from '../motion/CountUp';
 import { HexField } from '../motion/HexField';
 import { Eyebrow, H2 } from '../ui';
 
@@ -19,15 +20,17 @@ export function Ladder() {
             {L.stats.map((s) => (
               <div key={s.label} className="flex flex-col-reverse gap-1 py-4 [&+&]:border-l [&+&]:border-ink-text/15 [&+&]:pl-4">
                 <dt className="font-mono text-[11.5px] tracking-[0.1em] text-ink-muted uppercase">{s.label}</dt>
-                <dd className="font-display m-0 text-[44px] leading-none font-black lg:text-[56px]">{s.value}</dd>
+                <dd className="font-display m-0 text-[44px] leading-none font-black lg:text-[56px]">
+                  <CountUp value={s.value} />
+                </dd>
               </div>
             ))}
           </dl>
 
-          <ol className="reveal m-0 flex list-none flex-col p-0">
+          <ol data-stagger className="m-0 flex list-none flex-col p-0">
             {ranks.map((r, i) => (
-              <li key={r.key} className="ld-rank">
-                <span aria-hidden="true" className="hex-tile size-4 shrink-0" style={{ background: TIERS[i].onPaper }} />
+              <li key={r.key} className="reveal ld-rank">
+                <span aria-hidden="true" className="ld-hex hex-tile size-4 shrink-0" style={{ background: TIERS[i].onPaper }} />
                 <span className="font-display caps text-[22px] leading-none font-extrabold">{r.name}</span>
                 <span className="min-w-0 flex-1 truncate text-[14px] text-ink-muted">{r.topics.length ? r.topics.slice(0, 3).join(' · ') : r.tag}</span>
                 <span className="font-mono shrink-0 text-[12px] text-ink-muted">{r.problems}</span>

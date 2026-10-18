@@ -13,11 +13,15 @@ export function Hero() {
     <section
       id="hero"
       aria-labelledby="hero-title"
+      data-spot
+      style={{ ['--spot' as string]: 'transparent' }}
       className="relative z-2 -mt-[70px] flex flex-col overflow-hidden bg-paper px-5 pt-28 pb-16 text-ink-text lg:-mt-20 lg:px-14 lg:pt-40 lg:pb-24 xl:px-24"
     >
       <div aria-hidden="true" className="hex-bg-paper pointer-events-none absolute inset-0 [mask-image:radial-gradient(70%_60%_at_80%_40%,#000,transparent)]" />
+      {/* the honeycomb lights up in crimson under the cursor */}
+      <div aria-hidden="true" className="hero-hexlit pointer-events-none absolute inset-0" />
       <div className="relative mx-auto grid w-full max-w-[1320px] grid-cols-[minmax(0,1fr)] items-center gap-12 lg:grid-cols-12 lg:gap-x-12">
-        <div className="flex min-w-0 flex-col items-start gap-7 lg:col-span-6">
+        <div className="hero-par-a flex min-w-0 flex-col items-start gap-7 lg:col-span-6">
           <span className="anim-drop font-mono text-[12.5px] font-medium tracking-[0.16em] text-ink-muted uppercase" style={{ animationDelay: '0.1s' }}>
             <span className="text-crimson">{'// '}</span>
             {hero.eyebrow}
@@ -27,7 +31,7 @@ export function Hero() {
             <span className="block overflow-hidden pt-[0.04em]">
               <span className="anim-mask relative" style={{ animationDelay: '0.2s', display: 'inline-block' }}>
                 {first}
-                <span className="hero-ac font-mono" aria-hidden="true">
+                <span className="hero-ac hero-ac-in font-mono" aria-hidden="true">
                   <Icon name="check" size={12} stroke={3.4} />
                   AC
                 </span>
@@ -65,10 +69,14 @@ export function Hero() {
           </div>
         </div>
 
-        <figure className="anim-rise-lg m-0 flex min-w-0 flex-col gap-3 lg:col-span-6" style={{ animationDelay: '0.5s' }}>
-          <MockRound />
-          <figcaption className="font-mono text-[11.5px] leading-[1.5] text-ink-muted">{hero.caption}</figcaption>
-        </figure>
+        <div className="hero-par-b min-w-0 lg:col-span-6">
+          <figure className="anim-rise-lg m-0 flex min-w-0 flex-col gap-3" style={{ animationDelay: '0.5s' }}>
+            <div data-tilt="3">
+              <MockRound />
+            </div>
+            <figcaption className="font-mono text-[11.5px] leading-[1.5] text-ink-muted">{hero.caption}</figcaption>
+          </figure>
+        </div>
       </div>
     </section>
   );

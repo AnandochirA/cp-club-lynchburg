@@ -11,7 +11,7 @@ export function How() {
           <Eyebrow>{H.eyebrow}</Eyebrow>
           <H2 id="how-title">{H.title}</H2>
         </div>
-        <ol data-stagger className="hw-steps m-0 mt-12 grid list-none grid-cols-[minmax(0,1fr)] gap-0 p-0 lg:mt-18 lg:grid-cols-4">
+        <ol data-stagger className="reveal hw-steps m-0 mt-12 grid list-none grid-cols-[minmax(0,1fr)] gap-0 p-0 lg:mt-18 lg:grid-cols-4">
           {H.steps.map((s, i) => (
             <li key={s.title} className="reveal hw-step">
               <span className="hw-num font-display" aria-hidden="true">

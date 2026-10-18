@@ -12,7 +12,7 @@ export function Loop() {
         </div>
         <ul data-stagger className="m-0 mt-12 grid list-none grid-cols-[minmax(0,1fr)] gap-3 p-0 lg:mt-16 lg:grid-cols-3 lg:gap-5">
           {L.cards.map((c) => (
-            <li key={c.tag} data-spot className="reveal lift notch card-d flex flex-col gap-4 p-6 lg:p-8">
+            <li key={c.tag} data-spot data-tilt="3" className="reveal tilt-card notch card-d flex flex-col gap-4 p-6 lg:p-8">
               <span className="font-mono w-fit text-[11.5px] font-bold tracking-[0.14em] text-crimson-hi uppercase">{c.tag}</span>
               <h3 className="font-display caps m-0 text-[34px] leading-[0.92] font-black lg:text-[40px]">{c.title}</h3>
               <p className="m-0 text-[15.5px] leading-[1.55] text-muted">{c.body}</p>

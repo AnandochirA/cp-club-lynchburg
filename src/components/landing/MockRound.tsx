@@ -120,7 +120,7 @@ export function MockRound() {
   const label = active < STAGES.length ? STAGES[active] : null;
 
   return (
-    <div ref={box} className="mr" aria-hidden="true">
+    <div ref={box} className="mr" data-hit={f.phase === 'stamp' ? '1' : undefined} aria-hidden="true">
       <div className="mr-head">
         <div className="flex min-w-0 flex-col gap-1">
           <span className="mr-kicker font-mono">
@@ -183,9 +183,27 @@ export function MockRound() {
       </div>
 
       <div className="mr-foot">
-        <span className="verdict on-ink" data-v={f.phase === 'play' ? 'wait' : 'ac'}>
-          {f.phase === 'play' ? 'Not submitted' : D.accepted}
+        <span key={f.phase === 'play' ? 'wait' : 'ac'} className={`verdict on-ink ${f.phase === 'play' ? '' : 'verdict-stamp'}`} data-v={f.phase === 'play' ? 'wait' : 'ac'}>
+          {f.phase === 'play' ? (
+            <>
+              Judging
+              <span className="judging ml-1" aria-hidden="true">
+                {[0, 1, 2].map((i) => (
+                  <i key={i} style={{ ['--n' as string]: i }} />
+                ))}
+              </span>
+            </>
+          ) : (
+            D.accepted
+          )}
         </span>
+        {f.phase !== 'play' && (
+          <span className="tests ml-3" aria-hidden="true">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <i key={i} style={{ ['--n' as string]: i }} />
+            ))}
+          </span>
+        )}
         {f.phase === 'stamp' && (
           <div className="mr-stamp">
             <span className="font-mono">{D.stamp.who}</span>
