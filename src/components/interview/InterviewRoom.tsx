@@ -11,8 +11,16 @@ import type { InterviewRecord, PostMortem } from '@/lib/interview';
 import {
   CLOSING,
   CURVEBALL_AT,
+  INTERRUPTS,
+  MISLEADER_ACK,
   NUDGES,
   PATTERN_SUGGESTIONS,
+  PERSONAS,
+  PERSONA_KEYS,
+  PERSONA_TIMING,
+  REPEAT_LINE,
+  RUSHES,
+  TERSE_PROMPTS,
   STAGES,
   STAGE_IDS,
   TOTAL_MINUTES,
@@ -21,6 +29,8 @@ import {
   interviewCopy as C,
   lastTimeLine,
   stageById,
+  steerFor,
+  type PersonaKey,
   type StageId,
 } from '@/lib/interview-kit';
 import {
@@ -36,7 +46,9 @@ import {
   transcriptChars,
   type Draft,
   type Line,
+  type LineTag,
 } from '@/lib/interview-logic';
+import { AI_LIMITS, CHECK_STAGES, isQuestion, type TurnReply, type TurnTrigger } from '@/lib/interviewer-logic';
 import { Icon } from '../icons';
 import { ReviewPanel } from './ReviewPanel';
 import { StagePanel } from './StagePanel';
@@ -65,6 +77,7 @@ export function InterviewRoom({
   lastNextTime,
   autostart = false,
   startMode = 'practice',
+  aiAvailable = false,
 }: {
   problem: Problem;
   resume: InterviewRecord | null;
@@ -74,6 +87,8 @@ export function InterviewRoom({
   autostart?: boolean;
   /** The mode a fresh start asks for. Blind rounds are started by the draw, never here. */
   startMode?: 'practice' | 'redo';
+  /** An OpenAI key is configured and you have AI rounds left today. */
+  aiAvailable?: boolean;
 }) {
   const [phase, setPhase] = useState<Phase>(resume?.finishedAt ? 'review' : 'intro');
   const [record, setRecord] = useState<InterviewRecord | null>(resume);
@@ -83,6 +98,12 @@ export function InterviewRoom({
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'failed'>('idle');
   const [micOn, setMicOn] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [choice, setChoice] = useState<PersonaKey | 'mystery'>('coach');
+  const [wantAi, setWantAi] = useState(aiAvailable);
+  const [naturalVoice, setNaturalVoice] = useState(true);
+  const [thinking, setThinking] = useState(false);
+  const [aiNote, setAiNote] = useState<string | null>(null);
+  const [ask, setAsk] = useState('');
 
   const draftRef = useRef(draft);
   const dirty = useRef(false);
@@ -97,6 +118,21 @@ export function InterviewRoom({
   const blind = mode === 'blind';
   // A blind round's coach must not leak the pattern through topic-specific follow-ups.
   const coachTopic = blind ? '' : problem.topic;
+  const persona: PersonaKey = record?.persona ?? (choice === 'mystery' ? 'coach' : choice);
+  const P = PERSONAS[persona];
+  const stone = persona === 'stone';
+  const isAi = !!record?.ai;
+  // A mystery interviewer stays unnamed until the review.
+  const hidePersona = draft.extras.mystery && phase !== 'review';
+  // AI turn bookkeeping: one request at a time, and the AI goes quiet for the round if it is switched off or out of budget.
+  const aiBusy = useRef(false);
+  const aiDead = useRef(false);
+  const lastAiAt = useRef(0);
+  const youAtLastAi = useRef(0);
+  const askTimer = useRef(0);
+  const speechStart = useRef(0);
+  const lastInterrupt = useRef(0);
+  const interrupts = useRef(0);
 
   const update = useCallback((fn: (d: Draft) => Draft) => {
     const next = fn(draftRef.current);
@@ -108,30 +144,47 @@ export function InterviewRoom({
   const sinceStart = () => (recordRef.current ? Date.now() - new Date(recordRef.current.startedAt).getTime() : 0);
 
   const addLine = useCallback(
-    (who: Line['who'], text: string) => {
+    (who: Line['who'], text: string, tag?: LineTag) => {
       const d = draftRef.current;
       if (d.stage === 'review') return;
       const t = text.slice(0, MAX_LINE);
       if (transcriptChars(d.transcript) + t.length > MAX_TRANSCRIPT_CHARS) return;
-      update((x) => ({ ...x, transcript: [...x.transcript, { stage: d.stage as StageId, who, text: t, at: sinceStart() }] }));
+      const line: Line = { stage: d.stage as StageId, who, text: t, at: sinceStart(), ...(tag ? { tag } : {}) };
+      update((x) => ({ ...x, transcript: [...x.transcript, line] }));
     },
     [update],
   );
 
+  // The natural voice: each coach line is spoken by OpenAI in the persona's voice; null falls back to the browser.
+  const cloud = useCallback(async (text: string) => {
+    const rec = recordRef.current;
+    if (!rec) return null;
+    const res = await fetch(`/api/interview/${rec.id}/voice`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text }),
+    }).catch(() => null);
+    return res?.ok ? res.blob() : null;
+  }, []);
+
+  const onFinalRef = useRef<(text: string) => void>(() => {});
   const speech = useSpeech({
-    onFinal: (text) => addLine('you', text),
+    onFinal: (text) => onFinalRef.current(text),
     onHeard: () => {
       const t = Date.now();
+      if (t - lastHeard.current >= TALK_GAP_MS) speechStart.current = t;
       if (micRef.current && t - lastHeard.current < TALK_GAP_MS) live.current.talkMs += t - lastHeard.current;
       lastHeard.current = t;
     },
+    cloud: isAi && naturalVoice ? cloud : undefined,
+    rate: P.rate,
   });
   const { say, listen } = speech;
 
   /** The coach speaks (or, with the voice off, just writes) a line. */
   const coach = useCallback(
-    (text: string) => {
-      addLine('coach', text);
+    (text: string, tag?: LineTag) => {
+      addLine('coach', text, tag);
       coachUntil.current = Date.now() + 1000;
       void say(text).then(() => {
         coachUntil.current = Date.now();
@@ -197,6 +250,57 @@ export function InterviewRoom({
     [commit],
   );
 
+  /**
+   * Ask the AI interviewer to react. Resolves true if it said something.
+   * Failures are quiet: the scripted coach keeps the round going.
+   */
+  const aiTurn = useCallback(
+    async (trigger: TurnTrigger, ctx: { finished?: StageId; next?: StageId } = {}) => {
+      const rec = recordRef.current;
+      if (!rec?.ai || aiDead.current || aiBusy.current) return false;
+      aiBusy.current = true;
+      setThinking(true);
+      lastAiAt.current = Date.now();
+      youAtLastAi.current = draftRef.current.transcript.filter((l) => l.who === 'you').length;
+      const ctl = new AbortController();
+      const timer = window.setTimeout(() => ctl.abort(), AI_LIMITS.replyTimeoutMs + 1500);
+      let said = false;
+      try {
+        const res = await fetch(`/api/interview/${rec.id}/turn`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ trigger, draft: draftRef.current, ...ctx }),
+          signal: ctl.signal,
+        });
+        const json = (await res.json().catch(() => ({}))) as { reply?: TurnReply; error?: string };
+        if (res.ok) setAiNote((n) => (n === C.ai.down ? null : n));
+        if (res.ok && json.reply?.say) {
+          coach(json.reply.say, 'ai');
+          said = true;
+          setAiNote(null);
+        } else if (json.error === 'ai_limit' || json.error === 'ai_off') {
+          aiDead.current = true;
+          setAiNote(C.ai.offNow);
+        } else if (!res.ok) {
+          setAiNote(C.ai.down);
+        }
+      } catch {
+        /* timed out or offline: the scripted line covers it */
+      } finally {
+        window.clearTimeout(timer);
+        aiBusy.current = false;
+        setThinking(false);
+      }
+      return said;
+    },
+    [coach],
+  );
+
+  const promptFor = useCallback(
+    (id: StageId) => (stone ? TERSE_PROMPTS[id] : stageById(id).prompt),
+    [stone],
+  );
+
   const enter = useCallback(
     (id: StageId, how: 'done' | 'skipped' | 'jump' | 'resume' = 'jump') => {
       commit();
@@ -214,13 +318,45 @@ export function InterviewRoom({
       });
       // Re-entering a step you already heard does not repeat the whole prompt.
       const st = draftRef.current.stages[id];
-      if (how === 'resume') coach(`Welcome back. We were on ${stageById(id).title.toLowerCase()}. ${stageById(id).goal}`);
-      else if (st.ms === 0) coach(stageById(id).prompt);
-      else coach(`Back to ${stageById(id).title.toLowerCase()}.`);
+      interrupts.current = 0;
+      if (how === 'resume') coach(`Welcome back. We were on ${stageById(id).title.toLowerCase()}. ${stageById(id).goal}`, 'prompt');
+      else if (st.ms === 0) {
+        // The Misleader agrees with whatever you just did; the AI reacts to it; everyone else just moves on.
+        const prompt = persona === 'misleader' && how === 'done' ? `${MISLEADER_ACK} ${promptFor(id)}` : promptFor(id);
+        if (recordRef.current?.ai && how === 'done' && from !== 'review') {
+          void aiTurn('stage_end', { finished: from, next: id }).then((said) => !said && coach(prompt, 'prompt'));
+        } else coach(prompt, 'prompt');
+      } else coach(`Back to ${stageById(id).title.toLowerCase()}.`, 'prompt');
       void save();
     },
-    [commit, update, coach, save, coachTopic],
+    [commit, update, coach, save, coachTopic, persona, promptFor, aiTurn],
   );
+
+  // What happens when you finish a sentence: it joins the transcript, a question goes to the AI, and
+  // anyone but the Coach may pretend they didn't catch a long one.
+  onFinalRef.current = (text: string) => {
+    addLine('you', text);
+    const d = draftRef.current;
+    if (d.stage === 'review') return;
+    if (recordRef.current?.ai && isQuestion(text)) {
+      window.clearTimeout(askTimer.current);
+      askTimer.current = window.setTimeout(() => void aiTurn('question'), AI_LIMITS.questionDebounceMs);
+      return;
+    }
+    const long = text.split(/\s+/).length >= 12;
+    const repeated = d.transcript.some((l) => l.tag === 'repeat');
+    if (persona !== 'coach' && long && !repeated && (d.stage === 'approach' || d.stage === 'test') && Math.random() < PERSONA_TIMING.repeatChance) {
+      coach(REPEAT_LINE, 'repeat');
+    }
+  };
+
+  function askTyped() {
+    const q = ask.trim();
+    if (!q) return;
+    setAsk('');
+    addLine('you', q);
+    void aiTurn('question');
+  }
 
   function toggleMic(on: boolean) {
     setMicOn(on);
@@ -234,7 +370,12 @@ export function InterviewRoom({
     let rec = fresh ? null : resume;
     if (!rec) {
       setBusy('start');
-      const res = await apiPost<{ interview: InterviewRecord }>('/api/interview', { slug: problem.slug, mode: startMode });
+      const res = await apiPost<{ interview: InterviewRecord }>('/api/interview', {
+        slug: problem.slug,
+        mode: startMode,
+        persona: choice,
+        ai: wantAi && aiAvailable,
+      });
       setBusy(null);
       if (!res.ok) return setError(apiErrors[res.error] ?? apiErrors.server);
       rec = res.data.interview;
@@ -248,7 +389,7 @@ export function InterviewRoom({
     const at = rec.draft.stage === 'review' ? 'read' : rec.draft.stage;
     // A session nobody has spent time in yet (a blind draw lands here) is a fresh start, not a resume.
     const untouched = STAGE_IDS.every((id) => rec.draft.stages[id].ms === 0);
-    if ((rec !== resume || untouched) && lastNextTime) coach(lastTimeLine(lastNextTime));
+    if ((rec !== resume || untouched) && lastNextTime && rec.persona !== 'stone') coach(lastTimeLine(lastNextTime), 'prompt');
     enter(at, rec === resume && !untouched ? 'resume' : 'jump');
   }
 
@@ -258,7 +399,7 @@ export function InterviewRoom({
     setBusy('finish');
     commit();
     toggleMic(false);
-    coach(CLOSING);
+    coach(stone ? "That's time." : CLOSING, 'prompt');
     // Pull the latest solves first so the AC check can see a submission made a minute ago.
     // 'too_soon' just means a sync ran recently, which is fine.
     await apiPost('/api/me/sync');
@@ -313,27 +454,62 @@ export function InterviewRoom({
       const quiet = t - Math.max(lastHeard.current, live.current.enteredAt, coachUntil.current);
       live.current.longestSilenceMs = Math.max(live.current.longestSilenceMs, quiet);
       const sinceNudge = t - live.current.lastNudge;
-      if (quiet >= NUDGE_AFTER_MS && sinceNudge >= NUDGE_AFTER_MS && s.nudges + live.current.nudges < MAX_NUDGES_PER_STAGE) {
+      // The Stone Face never nudges: keeping yourself going is the drill.
+      if (!stone && quiet >= NUDGE_AFTER_MS && sinceNudge >= NUDGE_AFTER_MS && s.nudges + live.current.nudges < MAX_NUDGES_PER_STAGE) {
         live.current.nudges += 1;
         live.current.lastNudge = t;
-        coach(pick(id === 'code' ? NUDGES.code : NUDGES.default));
+        coach(pick(id === 'code' ? NUDGES.code : NUDGES.default), 'nudge');
         return;
       }
+      // The Interrupter cuts in once you have been talking for a while without a break.
+      const talkingNow = t - lastHeard.current < 1500 && t - speechStart.current >= PERSONA_TIMING.interruptAfterTalkMs;
+      if (
+        persona === 'interrupter' &&
+        talkingNow &&
+        CHECK_STAGES.includes(id) &&
+        interrupts.current < PERSONA_TIMING.interruptsPerStage &&
+        t - lastInterrupt.current >= PERSONA_TIMING.interruptGapMs
+      ) {
+        interrupts.current += 1;
+        lastInterrupt.current = t;
+        speechStart.current = t;
+        coach(pick(INTERRUPTS), 'interrupt');
+        return;
+      }
+    }
+    // The Misleader's wrong turn, once, partway into Approach.
+    if (persona === 'misleader' && id === 'approach' && elapsed >= budget * PERSONA_TIMING.steerAt && !d.transcript.some((l) => l.tag === 'steer')) {
+      coach(steerFor(problem.topic), 'steer');
+      return;
+    }
+    // The Rusher's fake time warnings.
+    const total = STAGE_IDS.reduce((n, sid) => n + d.stages[sid].ms, 0) + (t - live.current.enteredAt);
+    const rushed = d.transcript.filter((l) => l.tag === 'rush').length;
+    if (persona === 'rusher' && rushed < RUSHES.length && total >= TOTAL_MINUTES * 60_000 * PERSONA_TIMING.rushAt[rushed]) {
+      coach(RUSHES[rushed], 'rush');
+      return;
+    }
+    // The AI listens in now and then, once you have said something new.
+    const youNow = d.transcript.filter((l) => l.who === 'you').length;
+    const every = persona === 'interrupter' ? AI_LIMITS.checkEveryMsInterrupter : AI_LIMITS.checkEveryMs;
+    if (isAi && CHECK_STAGES.includes(id) && t - lastAiAt.current >= every && youNow - youAtLastAi.current >= 2 && !aiBusy.current) {
+      void aiTurn('check');
     }
     const x = d.extras;
     if (id === 'test' && x.curveball && !x.curveAsked && elapsed >= budget * CURVEBALL_AT) {
       update((v) => ({ ...v, extras: { ...v.extras, curveAsked: true } }));
-      coach(x.curveball);
+      coach(x.curveball, 'curveball');
       return;
     }
-    if (!s.asked && s.followUp && elapsed >= budget * FOLLOW_UP_AT) {
+    // With the AI on, it asks its own follow-ups; the scripted ones are for the scripted coach.
+    if (!isAi && !s.asked && s.followUp && elapsed >= budget * FOLLOW_UP_AT) {
       update((x) => ({ ...x, stages: { ...x.stages, [id]: { ...x.stages[id], asked: true } } }));
-      coach(s.followUp);
+      coach(s.followUp, 'followup');
       return;
     }
     if (!live.current.warnedOver && elapsed >= budget) {
       live.current.warnedOver = true;
-      coach("That's the time for this step. Wrap up and move on when you're ready.");
+      coach(stone ? 'Time.' : "That's the time for this step. Wrap up and move on when you're ready.", 'warn');
     }
   };
   useEffect(() => {
@@ -404,7 +580,24 @@ export function InterviewRoom({
         </div>
         {phase === 'live' && (
           <div className="flex items-center gap-2 sm:gap-3">
-            <span className="font-mono hidden text-[12px] text-white/55 md:inline" role="status">
+            <span className="iv-persona-badge font-mono" data-persona={hidePersona ? 'mystery' : persona}>
+              {hidePersona ? C.persona.unknown : P.name}
+              {isAi && <b>AI</b>}
+            </span>
+            {isAi && (
+              <button
+                type="button"
+                className="bar-btn hidden xl:inline-flex"
+                aria-pressed={naturalVoice}
+                onClick={() => {
+                  speech.hush();
+                  setNaturalVoice((v) => !v);
+                }}
+              >
+                {naturalVoice ? C.ai.natural : C.ai.browser}
+              </button>
+            )}
+            <span className="font-mono hidden text-[12px] text-white/55 2xl:inline" role="status">
               {saveState === 'saving' ? C.saving : saveState === 'saved' ? C.saved : saveState === 'failed' ? C.saveFailed : ''}
             </span>
             <span className="font-mono text-[14px] tabular-nums" aria-label="Total time">
@@ -482,6 +675,37 @@ export function InterviewRoom({
             <p className="m-0 max-w-[64ch] text-[14px] leading-[1.5] text-muted">{C.micNote}</p>
             {!speech.stt && <p className="notice">{C.noStt}</p>}
             {!speech.tts && <p className="notice">{C.noTts}</p>}
+            {!resume && (
+              <fieldset className="m-0 flex flex-col gap-3 border-0 p-0">
+                <legend className="mb-3 p-0 font-mono text-[12px] tracking-[0.1em] text-dim uppercase">{C.persona.choose}</legend>
+                <div className="iv-personas">
+                  {[...PERSONA_KEYS, 'mystery' as const].map((k) => {
+                    const info = k === 'mystery' ? { name: C.persona.mystery, how: C.persona.mysteryHow } : PERSONAS[k];
+                    return (
+                      <label key={k} className="iv-persona" data-persona={k}>
+                        <input type="radio" name="persona" checked={choice === k} onChange={() => setChoice(k)} />
+                        <span>
+                          <span className="iv-persona-mark" aria-hidden="true">
+                            {k === 'mystery' ? '?' : info.name.replace('The ', '').charAt(0)}
+                          </span>
+                          <b className="font-display caps">{info.name}</b>
+                          <small>{info.how}</small>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </fieldset>
+            )}
+            {!resume && aiAvailable && (
+              <label className="iv-ai-toggle">
+                <input type="checkbox" checked={wantAi} onChange={(e) => setWantAi(e.target.checked)} />
+                <span>
+                  <b>{C.ai.toggle}</b>
+                  <small>{C.ai.toggleNote}</small>
+                </span>
+              </label>
+            )}
             <div className="flex flex-wrap items-center gap-4">
               <button
                 type="button"
@@ -517,13 +741,16 @@ export function InterviewRoom({
                   state={draft.stages[stageId]}
                   checklist={checklistFor(stageId, problem.topic, blind)}
                   canSkip={!blind}
-                  coachLine={lastCoach?.text ?? stageById(stageId).prompt}
+                  coachLine={lastCoach?.text ?? promptFor(stageId)}
                   speaking={speech.speaking}
+                  thinking={thinking}
+                  who={hidePersona ? C.interviewer : `${C.interviewer} · ${P.name}`}
                   elapsedMs={draft.stages[stageId].ms + liveMs}
                   problem={problem}
                   isLast={idx === STAGE_IDS.length - 1}
                   busy={busy !== null}
-                  onRepeat={() => void say(lastCoach?.text ?? stageById(stageId).prompt)}
+                  onRepeat={() => void say(lastCoach?.text ?? promptFor(stageId))}
+                  finishLabel={isAi ? C.ai.writing : undefined}
                   onNotes={(notes) => update((x) => ({ ...x, stages: { ...x.stages, [stageId]: { ...x.stages[stageId], notes } } }))}
                   onToggle={(i) =>
                     update((x) => {
@@ -535,6 +762,28 @@ export function InterviewRoom({
                   onNext={() => (idx === STAGE_IDS.length - 1 ? void finish() : enter(STAGE_IDS[idx + 1], 'done'))}
                   onSkip={() => enter(STAGE_IDS[idx + 1], 'skipped')}
                 >
+                  {isAi && (
+                    <form
+                      className="iv-ask"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        askTyped();
+                      }}
+                    >
+                      <input
+                        className="iv-input"
+                        value={ask}
+                        maxLength={300}
+                        onChange={(e) => setAsk(e.target.value)}
+                        placeholder={C.ai.askPlaceholder}
+                        aria-label={C.ai.ask}
+                      />
+                      <button type="submit" className="bar-btn" disabled={!ask.trim() || thinking}>
+                        {C.ai.ask}
+                      </button>
+                    </form>
+                  )}
+                  {aiNote && <p className="notice">{aiNote}</p>}
                   {blind && stageId === 'approach' && (
                     <label className="flex flex-col gap-2">
                       <span className="font-mono text-[12px] tracking-[0.1em] text-dim uppercase">{C.blind.pattern}</span>

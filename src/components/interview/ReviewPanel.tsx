@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Problem } from '@/lib/curriculum';
 import type { InterviewRecord, PostMortem } from '@/lib/interview';
-import { MISTAKES, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C, patternMatches } from '@/lib/interview-kit';
+import { MISTAKES, PERSONAS, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C, patternMatches } from '@/lib/interview-kit';
+import { calibrate, signalScores } from '@/lib/film';
+import { estimateCost } from '@/lib/interviewer-logic';
 import {
   MAX_NEXT_TIME,
   MISTAKE_KEYS,
@@ -16,6 +18,7 @@ import {
   type Scores,
 } from '@/lib/interview-logic';
 import { Icon } from '../icons';
+import { GameFilm } from './GameFilm';
 import { Transcript } from './Transcript';
 import { VerdictStamp } from './VerdictStamp';
 
@@ -44,9 +47,22 @@ export function ReviewPanel({
   const [busy, setBusy] = useState<'save' | 'check' | null>(null);
   const [slam, setSlam] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [focus, setFocus] = useState<number | null>(null);
   const t = record.talkStats;
   const d = record.draft;
   const verdict = verdictOf(record.scores);
+  const ai = record.aiReview;
+  const debrief = ai?.debrief ?? null;
+  const persona = PERSONAS[record.persona];
+  const revealPersona = record.persona !== 'coach' || d.extras.mystery;
+  // The yardstick for calibration: the AI's scores when there are any, else what the signals say.
+  const blindHit = record.mode === 'blind' ? patternMatches(d.extras.pattern, problem.topic) : null;
+  const bench = debrief?.scores ?? signalScores(record.metrics, t, record.acAfterStart, record.mistakes, blindHit);
+  const calib = calibrate(record.scores, bench);
+  const seek = (line: number) => {
+    setFocus(line);
+    document.getElementById('review-transcript')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const date = new Date(record.startedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 
   async function lockIn() {
@@ -78,7 +94,10 @@ export function ReviewPanel({
               #{problem.id} · {problem.difficulty.toLowerCase()} · {problem.topic}
             </span>
           </div>
-          <VerdictStamp key={verdict ?? 'pending'} verdict={verdict} date={date} slam={slam} />
+          <div className="iv-stamps">
+            {debrief && <VerdictStamp verdict={debrief.verdict} date={date} slam who={C.aiReview.stamp} sub={persona.name} />}
+            <VerdictStamp key={verdict ?? 'pending'} verdict={verdict} date={date} slam={slam} who={debrief ? C.aiReview.you : undefined} />
+          </div>
         </div>
 
         {t && (
@@ -132,6 +151,107 @@ export function ReviewPanel({
           )}
         </p>
       </section>
+
+      {revealPersona && (
+        <section className="panel iv-reveal-persona flex flex-col gap-3 p-5 lg:p-7" data-persona={record.persona} aria-label={C.persona.revealTitle}>
+          <span className="font-mono text-[11.5px] tracking-[0.14em] text-dim uppercase">{C.persona.revealTitle}</span>
+          <span className="iv-reveal-name font-display caps">{persona.name}</span>
+          <p className="m-0 max-w-[64ch] text-[15.5px] leading-[1.55] text-soft">{persona.reveal}</p>
+        </section>
+      )}
+
+      {ai && (
+        <section className="panel flex flex-col gap-6 p-5 lg:p-7" aria-labelledby="ai-title">
+          <h3 id="ai-title" className="font-display caps m-0 text-[30px] leading-[0.95] font-black">
+            {C.aiReview.title}
+          </h3>
+          {!debrief ? (
+            <p className="m-0 text-[14.5px] text-muted">{C.aiReview.failed}</p>
+          ) : (
+            <>
+              <p className="iv-ai-summary m-0">{debrief.summary}</p>
+              <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-2">
+                <div className="flex flex-col gap-2">
+                  <span className="arena-h font-mono">{C.aiReview.strengths}</span>
+                  <ul className="iv-ai-list m-0 p-0" data-tone="good">
+                    {debrief.strengths.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="arena-h font-mono">{C.aiReview.concerns}</span>
+                  <ul className="iv-ai-list m-0 p-0" data-tone="bad">
+                    {debrief.concerns.map((x) => (
+                      <li key={x}>{x}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              {debrief.markedDown && (
+                <div className="iv-marked">
+                  <span className="font-mono text-[11.5px] tracking-[0.14em] uppercase">
+                    {C.aiReview.markedDown} · {debrief.markedDown.at}
+                  </span>
+                  <blockquote className="m-0">“{debrief.markedDown.quote}”</blockquote>
+                  <p className="m-0 text-[14.5px] text-soft">{debrief.markedDown.why}</p>
+                </div>
+              )}
+              {debrief.clarifications.length > 0 && (
+                <div className="flex flex-col gap-2">
+                  <span className="arena-h font-mono">{C.aiReview.clarifications}</span>
+                  <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
+                    {debrief.clarifications.map((c) => (
+                      <li key={c.question} className="iv-clar" data-asked={c.asked ? '1' : undefined}>
+                        <Icon name={c.asked ? 'check' : 'close'} size={14} stroke={3} />
+                        <span className="flex-grow">{c.question}</span>
+                        <span className="font-mono text-[11px] uppercase">{c.asked ? C.aiReview.asked : C.aiReview.missed}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+          {ai.brief && (
+            <details className="iv-brief">
+              <summary className="font-mono">{C.aiReview.notes}</summary>
+              <p className="m-0 text-[13.5px] text-dim">{C.aiReview.notesLead}</p>
+              <dl className="m-0 flex flex-col gap-3">
+                <div>
+                  <dt>{C.aiReview.brute}</dt>
+                  <dd>
+                    {ai.brief.bruteForce.approach} <span className="font-mono text-dim">({ai.brief.bruteForce.time} time, {ai.brief.bruteForce.space} space)</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{C.aiReview.optimal}</dt>
+                  <dd>
+                    {ai.brief.optimal.approach} <span className="font-mono text-dim">({ai.brief.optimal.time} time, {ai.brief.optimal.space} space)</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt>{C.aiReview.pitfalls}</dt>
+                  <dd>{ai.brief.pitfalls.join(' · ')}</dd>
+                </div>
+              </dl>
+            </details>
+          )}
+          <p className="m-0 font-mono text-[12px] text-dim">{C.aiReview.cost(`$${estimateCost(ai.usage).toFixed(3)}`)}</p>
+        </section>
+      )}
+
+      {d.transcript.length > 1 && (
+        <section className="panel flex flex-col gap-4 p-5 lg:p-7" aria-labelledby="film-title">
+          <div className="flex flex-col gap-1.5">
+            <h3 id="film-title" className="font-display caps m-0 text-[30px] leading-[0.95] font-black">
+              {C.film.title}
+            </h3>
+            <p className="m-0 text-[14px] text-muted">{C.film.lead}</p>
+          </div>
+          <GameFilm draft={d} metrics={record.metrics} markedDown={debrief?.markedDown ?? null} onSeek={seek} />
+        </section>
+      )}
 
       {(record.mode === 'blind' || d.extras.curveAsked) && (
         <section className="panel flex flex-col gap-5 p-5 lg:p-7" aria-label={C.blind.pattern}>
@@ -308,7 +428,54 @@ export function ReviewPanel({
         </div>
       </section>
 
-      <section className="panel flex flex-col gap-4 p-5 lg:p-7" aria-label={R.yourNotes}>
+      <section className="panel flex flex-col gap-4 p-5 lg:p-7" aria-labelledby="calib-title">
+        <div className="flex flex-col gap-1.5">
+          <h3 id="calib-title" className="font-display caps m-0 text-[30px] leading-[0.95] font-black">
+            {C.calib.title}
+          </h3>
+          <p className="m-0 text-[14px] text-muted">{debrief ? C.calib.leadAi : C.calib.leadSignals}</p>
+        </div>
+        {!record.scores ? (
+          <p className="m-0 text-[14.5px] text-soft">{C.calib.locked}</p>
+        ) : !calib ? (
+          <p className="m-0 text-[14.5px] text-soft">{C.calib.noYardstick}</p>
+        ) : (
+          <>
+            <table className="iv-table iv-calib">
+              <thead>
+                <tr>
+                  <th scope="col" />
+                  <th scope="col">{C.calib.you}</th>
+                  <th scope="col">{debrief ? C.calib.ai : C.calib.signals}</th>
+                  <th scope="col">{C.calib.gap}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {calib.map((c) => (
+                  <tr key={c.key}>
+                    <th scope="row">{RUBRIC.find((r) => r.key === c.key)!.title}</th>
+                    <td>{c.self}</td>
+                    <td>{c.bench}</td>
+                    <td data-gap={c.gap > 0 ? 'over' : c.gap < 0 ? 'under' : 'even'}>{c.gap > 0 ? `+${c.gap}` : c.gap}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {(() => {
+              const worst = calib.reduce((a, b) => (Math.abs(b.gap) > Math.abs(a.gap) ? b : a));
+              const title = RUBRIC.find((r) => r.key === worst.key)!.title;
+              const by = `${Math.abs(worst.gap)} point${Math.abs(worst.gap) === 1 ? '' : 's'}`;
+              return (
+                <p className="m-0 text-[15px] leading-[1.5] text-soft">
+                  {worst.gap === 0 ? C.calib.even : worst.gap > 0 ? C.calib.over(title, by) : C.calib.under(title, by)}
+                </p>
+              );
+            })()}
+          </>
+        )}
+      </section>
+
+      <section id="review-transcript" className="panel flex flex-col gap-4 p-5 lg:p-7" aria-label={R.yourNotes}>
         <h3 className="font-display caps m-0 text-[28px] leading-[0.95] font-black">{R.yourNotes}</h3>
         {STAGES.filter((s) => d.stages[s.id].notes.trim()).length === 0 ? (
           <p className="m-0 text-[14.5px] text-muted">No notes this round.</p>
@@ -321,7 +488,7 @@ export function ReviewPanel({
           ))
         )}
         <h3 className="font-display caps m-0 mt-2 text-[28px] leading-[0.95] font-black">{C.transcript}</h3>
-        <Transcript lines={d.transcript} />
+        <Transcript lines={d.transcript} focus={focus} />
       </section>
     </div>
   );

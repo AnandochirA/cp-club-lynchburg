@@ -1280,3 +1280,426 @@ a.door:hover {
 .tk[data-redo] {
   position: relative;
 }
+
+/* ============================================= round three: personas, AI, film */
+
+/* each persona has a colour; it tints its badge, card and reveal */
+[data-persona] {
+  --pc: #52d68a;
+}
+[data-persona='stone'] {
+  --pc: #a9aebb;
+}
+[data-persona='interrupter'] {
+  --pc: #ff8fa1;
+}
+[data-persona='misleader'] {
+  --pc: #c89bff;
+}
+[data-persona='rusher'] {
+  --pc: #f6c453;
+}
+[data-persona='mystery'] {
+  --pc: #ffffff;
+}
+
+.iv-persona-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 30px;
+  padding: 0 10px;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  color: var(--pc);
+  border: 1px solid color-mix(in srgb, var(--pc) 45%, transparent);
+  background: color-mix(in srgb, var(--pc) 9%, transparent);
+}
+.iv-persona-badge b {
+  padding: 1px 5px;
+  font-size: 10px;
+  color: #0b0c10;
+  background: #c89bff;
+}
+
+/* the picker */
+.iv-personas {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 10px;
+}
+.iv-persona {
+  position: relative;
+  cursor: pointer;
+}
+.iv-persona input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.iv-persona > span {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  transition:
+    border-color 0.2s,
+    background-color 0.2s,
+    translate 0.35s var(--ease-out-expo);
+}
+.iv-persona:hover > span {
+  translate: 0 -2px;
+  border-color: color-mix(in srgb, var(--pc) 45%, transparent);
+}
+.iv-persona input:checked + span {
+  border-color: var(--pc);
+  background: color-mix(in srgb, var(--pc) 10%, transparent);
+  box-shadow: inset 0 3px 0 var(--pc);
+}
+.iv-persona input:focus-visible + span {
+  outline: 2px solid var(--pc);
+  outline-offset: 2px;
+}
+.iv-persona-mark {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 38px;
+  font: 900 20px var(--font-display);
+  color: #0b0c10;
+  clip-path: var(--hex);
+  background: var(--pc);
+}
+.iv-persona b {
+  font-size: 24px;
+  line-height: 0.9;
+  color: var(--color-text);
+}
+.iv-persona small {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-muted);
+}
+
+.iv-ai-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 640px;
+  padding: 14px 16px;
+  cursor: pointer;
+  border: 1px solid rgba(200, 155, 255, 0.35);
+  background:
+    radial-gradient(90% 120% at 0% 0%, rgba(200, 155, 255, 0.14), transparent 60%),
+    rgba(255, 255, 255, 0.02);
+}
+.iv-ai-toggle input {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  accent-color: #c89bff;
+}
+.iv-ai-toggle span {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.iv-ai-toggle b {
+  font-size: 15.5px;
+  color: var(--color-text);
+}
+.iv-ai-toggle small {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+.iv-ask {
+  display: flex;
+  gap: 8px;
+}
+.iv-ask .iv-input {
+  height: 42px;
+}
+.iv-thinking {
+  margin-left: 4px;
+  letter-spacing: 0.2em;
+  animation: iv-pulse 1s ease-in-out infinite;
+}
+.iv-coach[data-thinking] {
+  border-left-color: #c89bff;
+}
+
+/* ------------------------------------------------------------ review: AI */
+.iv-stamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 28px;
+  align-items: center;
+}
+.iv-reveal-persona {
+  border-top: 3px solid var(--pc);
+  background:
+    radial-gradient(90% 120% at 100% 0%, color-mix(in srgb, var(--pc) 14%, transparent), transparent 60%),
+    linear-gradient(180deg, #12131a 0%, #0e0f14 100%);
+}
+.iv-reveal-name {
+  font-size: clamp(44px, 8vw, 80px);
+  font-weight: 900;
+  line-height: 0.82;
+  color: var(--pc);
+  animation: iv-rise 0.9s var(--ease-out-expo) 0.2s backwards;
+}
+.iv-ai-summary {
+  max-width: 70ch;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--color-text);
+}
+.iv-ai-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+}
+.iv-ai-list li {
+  padding-left: 14px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--color-soft);
+  border-left: 2px solid #52d68a;
+}
+.iv-ai-list[data-tone='bad'] li {
+  border-left-color: #ff5c77;
+}
+.iv-marked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 18px;
+  color: #ff8fa1;
+  border: 1px solid rgba(255, 92, 119, 0.4);
+  background: rgba(255, 92, 119, 0.06);
+}
+.iv-marked blockquote {
+  font-size: 17px;
+  font-style: italic;
+  color: var(--color-text);
+}
+.iv-clar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 14px;
+  color: #ff8fa1;
+  background: rgba(255, 92, 119, 0.06);
+}
+.iv-clar > span:nth-child(2) {
+  color: var(--color-soft);
+}
+.iv-clar[data-asked] {
+  color: #52d68a;
+  background: rgba(82, 214, 138, 0.06);
+}
+.iv-brief {
+  padding: 14px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+}
+.iv-brief summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+}
+.iv-brief[open] summary {
+  margin-bottom: 10px;
+}
+.iv-brief dt {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.iv-brief dd {
+  margin: 2px 0 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--color-soft);
+}
+
+.iv-calib thead th {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.iv-calib td {
+  font-size: 15px;
+}
+.iv-calib td[data-gap='over'] {
+  color: #ff8fa1;
+  font-weight: 700;
+}
+.iv-calib td[data-gap='under'] {
+  color: #7cc4ff;
+  font-weight: 700;
+}
+.arena-calib {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #ff8fa1;
+}
+.arena-calib[data-dir='under'] {
+  color: #7cc4ff;
+}
+
+/* transcript line picked from the film */
+.iv-transcript [data-focus] .iv-tr-line {
+  margin: 0 -8px;
+  padding: 4px 8px;
+  background: rgba(246, 196, 83, 0.12);
+  box-shadow: inset 3px 0 0 var(--color-gold);
+}
+
+/* ------------------------------------------------------------- game film */
+.film-strip {
+  position: relative;
+  padding-bottom: 22px;
+  cursor: crosshair;
+  user-select: none;
+}
+.film-strip svg {
+  display: block;
+  width: 100%;
+  height: 150px;
+}
+.film-you {
+  fill: color-mix(in srgb, var(--tier) 85%, #fff);
+}
+.film-coach {
+  fill: #c89bff;
+}
+.film-gap {
+  fill: rgba(255, 92, 119, 0.16);
+  stroke: rgba(255, 92, 119, 0.55);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.film-tick {
+  stroke: rgba(255, 255, 255, 0.25);
+  vector-effect: non-scaling-stroke;
+}
+.film-labels span {
+  position: absolute;
+  top: 3px;
+  overflow: hidden;
+  padding: 0 6px;
+  font-size: 11px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+}
+.film-axis span {
+  position: absolute;
+  bottom: 0;
+  translate: -50% 0;
+  font-size: 10.5px;
+  color: var(--color-dim);
+}
+.film-axis span:first-child {
+  translate: 0 0;
+}
+.film-head {
+  position: absolute;
+  top: 0;
+  bottom: 22px;
+  width: 1px;
+  background: #fff;
+  pointer-events: none;
+}
+.film-tip {
+  position: absolute;
+  top: calc(100% + 6px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 260px;
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--color-soft);
+  background: #0b0c10;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+.film-tip b {
+  font-size: 11.5px;
+  color: var(--color-gold);
+}
+.film-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 11.5px;
+  color: var(--color-dim);
+}
+.film-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.film-legend i {
+  width: 14px;
+  height: 8px;
+}
+.film-legend i.you {
+  background: color-mix(in srgb, var(--tier) 85%, #fff);
+}
+.film-legend i.coach {
+  height: 3px;
+  background: #c89bff;
+}
+.film-legend i.gap {
+  background: rgba(255, 92, 119, 0.3);
+  outline: 1px solid rgba(255, 92, 119, 0.6);
+}
+.film-moments {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 6px;
+}
+.film-moments button {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  font: 14px var(--font-sans);
+  text-align: left;
+  color: var(--color-soft);
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.035);
+  border: 0;
+  box-shadow: inset 3px 0 0 var(--mc);
+  transition: background-color 0.2s;
+}
+.film-moments button:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.film-moments button > span:first-child {
+  flex: none;
+  font-size: 12px;
+  color: var(--mc);
+}

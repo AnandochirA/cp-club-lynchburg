@@ -418,6 +418,128 @@ export function curveballsFor(topic: string): string[] {
 /** The share of the Test budget at which the curveball comes. */
 export const CURVEBALL_AT = 0.25;
 
+// -------------------------------------------------------------- personas
+
+/**
+ * Who is interviewing you. Real interviewers are not all kind; each persona
+ * trains staying steady under a different kind of pressure. Their tricks are
+ * scripted (timing-based, free); with the AI interviewer on, `ai` also shapes
+ * how it talks. `voice` and `voiceStyle` drive the natural (OpenAI) voice;
+ * `rate` the browser's fallback voice.
+ */
+export type PersonaKey = 'coach' | 'stone' | 'interrupter' | 'misleader' | 'rusher';
+export const PERSONA_KEYS: PersonaKey[] = ['coach', 'stone', 'interrupter', 'misleader', 'rusher'];
+
+export const PERSONAS: Record<
+  PersonaKey,
+  { name: string; how: string; reveal: string; voice: string; voiceStyle: string; rate: number; ai: string }
+> = {
+  coach: {
+    name: 'The Coach',
+    how: 'Warm and fair. Asks good follow-ups and nudges you when you go quiet.',
+    reveal: 'A fair interviewer. The baseline: if you struggled here, it was the problem, not the person.',
+    voice: 'marin',
+    voiceStyle: 'A warm, encouraging senior engineer. Calm, clear, friendly pace.',
+    rate: 1,
+    ai: 'You are supportive and fair, like a good senior engineer. Encourage briefly when the candidate is on track, and push back clearly when they are not.',
+  },
+  stone: {
+    name: 'The Stone Face',
+    how: 'Says almost nothing. No nudges, no reassurance, never “good”. You keep yourself going.',
+    reveal: 'Gave you nothing back on purpose. Silence from an interviewer is not a bad sign; did you keep talking anyway?',
+    voice: 'onyx',
+    voiceStyle: 'Flat, neutral and unreadable. Short sentences, slow, no warmth at all.',
+    rate: 0.95,
+    ai: 'You are neutral and unreadable. Use as few words as possible. Never praise, never reassure, never say "good" or "great". Answer clarifying questions with the bare fact.',
+  },
+  interrupter: {
+    name: 'The Interrupter',
+    how: 'Cuts in while you are mid-sentence: “wait, why?” Answer, then pick your thread back up.',
+    reveal: 'Cut in on purpose to break your flow. Did you answer and get back on track, or lose the thread?',
+    voice: 'ash',
+    voiceStyle: 'Brisk and a little impatient. Cuts in quickly and sharply.',
+    rate: 1.1,
+    ai: 'You often cut in with a sharp, short question about what the candidate just said: why it works, what its complexity is, what breaks it.',
+  },
+  misleader: {
+    name: 'The Misleader',
+    how: 'Agreeable, and once in a while points you the wrong way. Defend your approach.',
+    reveal: 'Steered you toward a worse idea on purpose and agreed with everything. Did you defend your approach, or follow?',
+    voice: 'coral',
+    voiceStyle: 'Warm, agreeable and confident, as if every idea is a good one.',
+    rate: 1,
+    ai: 'You are agreeable. Never correct the candidate\'s approach yourself; if it is wrong, say it sounds fine and let them find out. You still answer clarifying questions truthfully.',
+  },
+  rusher: {
+    name: 'The Rusher',
+    how: 'Tells you time is running out when it isn’t. Stay calm and stay thorough.',
+    reveal: 'The time warnings were fake. Did you skip testing or edge cases because you felt rushed?',
+    voice: 'verse',
+    voiceStyle: 'Fast, hurried and slightly stressed, like the meeting is running over.',
+    rate: 1.12,
+    ai: 'You are in a hurry. Keep replies very short, push the candidate to move faster, and mention that time is short now and then.',
+  },
+};
+
+/** What the Stone Face says instead of the full prompts. */
+export const TERSE_PROMPTS: Record<StageId, string> = {
+  read: 'Read the problem. Tell me what it asks.',
+  clarify: 'Questions?',
+  edges: 'Edge cases.',
+  approach: 'How would you solve it?',
+  pseudo: 'Pseudocode first.',
+  code: 'Code it.',
+  test: 'Test it. And the complexity.',
+};
+
+export const INTERRUPTS = [
+  'Wait. Why that data structure?',
+  "Hold on. What's the complexity of what you just said?",
+  'Sorry, back up. Why does that work?',
+  'Wait, what happens on an empty input?',
+  'Hang on. Is that the brute force, or the optimal one?',
+  'Stop for a second. Walk me through that again.',
+];
+
+export const RUSHES = ["Just so you know, we've only got about ten minutes left.", "Let's pick up the pace. We're nearly out of time."];
+export const REPEAT_LINE = 'Sorry, could you say that again? I lost you.';
+export const MISLEADER_ACK = 'Sounds good to me.';
+
+/** Confident pushes toward the wrong pattern. One is picked from a family the problem is NOT in. */
+const STEERS: Partial<Record<Family, string>> = {
+  array: 'Have you thought about just sorting it first? That usually makes these easy.',
+  hashing: 'Could you just put everything into a hash map and be done?',
+  twoPointers: 'This feels like a two pointers problem to me. Have you tried that?',
+  window: "Wouldn't a sliding window handle this?",
+  stack: 'Have you considered a stack here?',
+  binarySearch: 'Could you binary search on the answer?',
+  heap: 'What about a heap that keeps the best ones on top?',
+  backtracking: "Couldn't you just try every option with backtracking? The input is small.",
+  graph: 'Could you model this as a graph and run a BFS?',
+  dp: 'This smells like dynamic programming to me.',
+  greedy: 'Maybe a greedy choice works: always take the best option right now?',
+};
+
+export function steerFor(topic: string): string {
+  const mine = new Set(topicFamilies(topic));
+  const wrong = (Object.keys(STEERS) as Family[]).filter((f) => !mine.has(f));
+  return STEERS[wrong[Math.floor(Math.random() * wrong.length)]]!;
+}
+
+/** Persona timing, in one place. */
+export const PERSONA_TIMING = {
+  /** Interrupter: only after you have been talking this long without a break. */
+  interruptAfterTalkMs: 18_000,
+  interruptGapMs: 75_000,
+  interruptsPerStage: 2,
+  /** Misleader: the wrong steer comes this far into Approach. */
+  steerAt: 0.4,
+  /** Rusher: fake warnings at these shares of the whole round. */
+  rushAt: [0.35, 0.6],
+  /** Everyone but the Coach: the odds a long answer gets "sorry, say that again?" (once per round). */
+  repeatChance: 0.35,
+};
+
 // --------------------------------------------------------------- review
 
 export type ScoreKey = 'communication' | 'problemSolving' | 'coding' | 'verification';
@@ -579,6 +701,9 @@ export const interviewCopy = {
     scores: 'Your scores',
     weakest: 'weakest',
     streak: (n: number) => `${n} clean rounds in a row`,
+    overrate: (title: string, by: number) => `You overrate your ${title.toLowerCase()} by ${by.toFixed(1)} against the evidence.`,
+    underrate: (title: string, by: number) => `You underrate your ${title.toLowerCase()} by ${by.toFixed(1)}. You are better than you think.`,
+    calibrated: 'Your self-scores match the evidence. Well calibrated.',
     recent: 'Recent rounds',
     unscored: 'unscored',
     lastRound: 'Last round',
@@ -602,6 +727,66 @@ export const interviewCopy = {
     itWas: 'It was',
     noCall: 'No call',
     rules: ['Topic hidden', 'No skipping', 'No going back', 'A curveball is coming'],
+  },
+  film: {
+    title: 'Game film',
+    lead: 'The round as tape. Hover to hear what was said at any point; click, or pick a moment, to jump the transcript there.',
+    you: 'You talking',
+    coach: 'Interviewer talking',
+    gap: 'Silence over 20s',
+    moments: 'Key moments',
+  },
+  calib: {
+    title: 'Calibration',
+    leadAi: 'Your self-score next to the AI interviewer’s. Interviewers can only grade what they see and hear.',
+    leadSignals: 'Your self-score next to what your transcript signals say. No AI write-up this round, so the evidence is the yardstick.',
+    you: 'You',
+    ai: 'Interviewer',
+    signals: 'Evidence',
+    gap: 'Gap',
+    locked: 'Lock in your verdict to see how your self-score compares.',
+    noYardstick: 'Nothing to compare against this round: the mic was off and there was no AI interviewer.',
+    over: (title: string, by: string) => `You rate your ${title.toLowerCase()} ${by} higher than the evidence. That gap is what surprises people in real loops.`,
+    under: (title: string, by: string) => `You are harder on your ${title.toLowerCase()} than the evidence, by ${by}. Give yourself some credit.`,
+    even: 'Well calibrated: your self-score matches the evidence within half a point everywhere.',
+  },
+  aiReview: {
+    title: 'The interviewer’s write-up',
+    stamp: 'Interviewer',
+    you: 'You',
+    strengths: 'Strengths',
+    concerns: 'Concerns',
+    markedDown: 'Where it turned',
+    clarifications: 'Clarifying questions',
+    asked: 'asked',
+    missed: 'missed',
+    notes: 'The interviewer’s notes',
+    notesLead: 'What it knew all along. Now you can see it.',
+    brute: 'Brute force',
+    optimal: 'Optimal',
+    pitfalls: 'Common mistakes',
+    cost: (usd: string) => `This round cost about ${usd} in AI.`,
+    failed: 'The interviewer could not write its debrief this time. Your own review below still stands.',
+  },
+  ai: {
+    toggle: 'AI interviewer',
+    toggleNote:
+      'It listens to what you say, answers your clarifying questions, pushes back when you go wrong, and writes a real debrief at the end. A few cents a round.',
+    natural: 'Natural voice',
+    browser: 'Browser voice',
+    ask: 'Ask',
+    askPlaceholder: 'Or type a question for the interviewer…',
+    writing: 'The interviewer is writing your debrief…',
+    down: 'The AI interviewer isn’t answering right now, so the scripted coach is covering. It will keep trying.',
+    offNow: 'The AI interviewer is out for this round (daily limit reached, or it’s switched off). The scripted coach takes over.',
+  },
+  persona: {
+    choose: 'Pick your interviewer',
+    mystery: 'Mystery interviewer',
+    mysteryHow: 'One of the five, picked at random. You find out who it was in the review.',
+    unknown: '???',
+    label: 'Interviewer',
+    revealTitle: 'Your interviewer was',
   },
   curveball: 'Curveball',
   curveballNote: 'Answer out loud first, then jot down how you would adapt.',

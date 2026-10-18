@@ -7,7 +7,20 @@ import type { Verdict } from '@/lib/interview-logic';
  * The hiring committee's rubber stamp. Pending is a dashed outline; once you
  * lock in your scores it slams down (and the panel under it takes the hit).
  */
-export function VerdictStamp({ verdict, date, slam }: { verdict: Verdict | null; date: string; slam: boolean }) {
+export function VerdictStamp({
+  verdict,
+  date,
+  slam,
+  who = 'Coding round',
+  sub = 'Self-assessed',
+}: {
+  verdict: Verdict | null;
+  date: string;
+  slam: boolean;
+  /** The top line: who stamped it. */
+  who?: string;
+  sub?: string;
+}) {
   if (!verdict) {
     return (
       <div className="iv-stamp" data-pending="1">
@@ -19,9 +32,11 @@ export function VerdictStamp({ verdict, date, slam }: { verdict: Verdict | null;
   const v = VERDICTS[verdict];
   return (
     <div className="iv-stamp" data-v={v.v} data-slam={slam ? '1' : undefined} role="status">
-      <span className="iv-stamp-meta font-mono">Coding round · {date}</span>
+      <span className="iv-stamp-meta font-mono">
+        {who} · {date}
+      </span>
       <span className="iv-stamp-word font-display caps">{v.label}</span>
-      <span className="iv-stamp-meta font-mono">Self-assessed</span>
+      <span className="iv-stamp-meta font-mono">{sub}</span>
     </div>
   );
 }

@@ -44,11 +44,17 @@ function pickVoice(): SpeechSynthesisVoice | null {
 export function useSpeech({
   onFinal,
   onHeard,
+  cloud,
+  rate: defaultRate = 1,
 }: {
   /** A finished phrase you said. */
   onFinal: (text: string) => void;
   /** Any recognition activity at all (interim words included): you are talking. */
   onHeard: () => void;
+  /** A natural voice: audio for a line, or null to fall back to the browser's voice. */
+  cloud?: (text: string) => Promise<Blob | null>;
+  /** The browser voice's speed (personas talk at different speeds). */
+  rate?: number;
 }) {
   /** False until the browser's support has been checked (it can't be known on the server). */
   const [ready, setReady] = useState(false);
@@ -64,10 +70,14 @@ export function useSpeech({
   /** What the member asked for; recognition can stop on its own and is restarted while this is true. */
   const want = useRef(false);
   const talking = useRef(false);
-  /** Bumped per line, so a cancelled line finishing late cannot restart the mic mid-sentence. */
-  const line = useRef(0);
-  const cbs = useRef({ onFinal, onHeard });
-  cbs.current = { onFinal, onHeard };
+  /** Lines waiting or playing. The mic only comes back when this reaches zero. */
+  const pending = useRef(0);
+  /** Bumped by hush(), so lines queued before it are dropped instead of played. */
+  const gen = useRef(0);
+  const chain = useRef<Promise<void>>(Promise.resolve());
+  const audio = useRef<HTMLAudioElement | null>(null);
+  const cbs = useRef({ onFinal, onHeard, cloud, defaultRate });
+  cbs.current = { onFinal, onHeard, cloud, defaultRate };
 
   useEffect(() => {
     setStt(recognitionCtor() !== null);
@@ -78,6 +88,7 @@ export function useSpeech({
     return () => {
       want.current = false;
       rec.current?.abort();
+      audio.current?.pause();
       if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     };
   }, []);
@@ -147,38 +158,86 @@ export function useSpeech({
     [begin],
   );
 
-  /** Queue a coach line. Resolves when it has been said (or at once if the voice is off or unsupported). */
+  /**
+   * Queue a coach line. Lines play strictly in order, so "last time you
+   * said…" is never cut off by the step's prompt. With a natural voice the
+   * audio is fetched as soon as the line is queued (so it is ready by its
+   * turn) and the browser's voice stands in if it fails. Resolves when the
+   * line has been said, or at once with the voice off.
+   */
   const say = useCallback(
-    (text: string, rate = 1) =>
-      new Promise<void>((resolve) => {
-        if (!voiceOn || !('speechSynthesis' in window)) return resolve();
-        // No cancel(): lines queue up, so "last time you said…" is not cut off by the step's prompt.
-        const synth = window.speechSynthesis;
-        const u = new SpeechSynthesisUtterance(text);
-        const v = pickVoice();
-        if (v) u.voice = v;
-        u.rate = rate;
-        const mine = ++line.current;
-        talking.current = true;
-        setSpeaking(true);
-        rec.current?.abort();
-        const done = () => {
-          if (line.current !== mine) return resolve();
+    (text: string, rate?: number) => {
+      if (!voiceOn) return Promise.resolve();
+      const g = gen.current;
+      pending.current++;
+      talking.current = true;
+      setSpeaking(true);
+      rec.current?.abort();
+      const cloudFn = cbs.current.cloud;
+      const clip = cloudFn ? cloudFn(text).catch(() => null) : Promise.resolve(null);
+      const r = rate ?? cbs.current.defaultRate;
+      const job = chain.current
+        .then(async () => {
+          if (g !== gen.current) return;
+          const blob = await clip;
+          if (g !== gen.current) return;
+          if (blob) await playBlob(blob, audio);
+          else await speakBrowser(text, r);
+        })
+        .finally(() => {
+          if (g !== gen.current) return;
+          pending.current = Math.max(0, pending.current - 1);
+          if (pending.current > 0) return;
           talking.current = false;
           setSpeaking(false);
           if (want.current) begin();
-          resolve();
-        };
-        u.onend = done;
-        u.onerror = done;
-        synth.speak(u);
-      }),
+        });
+      chain.current = job.catch(() => {});
+      return job;
+    },
     [voiceOn, begin],
   );
 
+  /** Stop talking now and drop everything queued. */
   const hush = useCallback(() => {
+    gen.current++;
+    pending.current = 0;
+    chain.current = Promise.resolve();
+    audio.current?.pause();
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-  }, []);
+    talking.current = false;
+    setSpeaking(false);
+    if (want.current) begin();
+  }, [begin]);
 
   return { ready, stt, tts, listening, speaking, interim, denied, voiceOn, setVoiceOn, listen, say, hush };
+}
+
+function speakBrowser(text: string, rate: number) {
+  return new Promise<void>((resolve) => {
+    if (!('speechSynthesis' in window)) return resolve();
+    const u = new SpeechSynthesisUtterance(text);
+    const v = pickVoice();
+    if (v) u.voice = v;
+    u.rate = rate;
+    u.onend = () => resolve();
+    u.onerror = () => resolve();
+    window.speechSynthesis.speak(u);
+  });
+}
+
+function playBlob(blob: Blob, holder: { current: HTMLAudioElement | null }) {
+  return new Promise<void>((resolve) => {
+    const url = URL.createObjectURL(blob);
+    const a = new Audio(url);
+    holder.current = a;
+    const done = () => {
+      URL.revokeObjectURL(url);
+      resolve();
+    };
+    a.onended = done;
+    a.onerror = done;
+    a.onpause = done;
+    a.play().catch(done);
+  });
 }

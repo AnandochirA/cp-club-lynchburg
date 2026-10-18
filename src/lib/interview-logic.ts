@@ -39,7 +39,18 @@ export type StageState = {
   skipped: boolean;
 };
 
-export type Line = { stage: StageId; who: 'you' | 'coach'; text: string; /** ms since the session started */ at: number };
+/** What kind of coach line it was, so the game film can mark it. Your own lines have none. */
+export const LINE_TAGS = ['prompt', 'nudge', 'followup', 'curveball', 'warn', 'interrupt', 'steer', 'rush', 'repeat', 'ai'] as const;
+export type LineTag = (typeof LINE_TAGS)[number];
+
+export type Line = {
+  stage: StageId;
+  who: 'you' | 'coach';
+  text: string;
+  /** ms since the session started */
+  at: number;
+  tag?: LineTag;
+};
 
 export type Draft = {
   stage: StageId | 'review';
@@ -51,8 +62,15 @@ export type Draft = {
 };
 
 /** Blind mode's pattern call, and the curveball (empty when this round has none). */
-export type Extras = { pattern: string; curveball: string; curveAsked: boolean; curveAnswer: string };
-export const emptyExtras = (): Extras => ({ pattern: '', curveball: '', curveAsked: false, curveAnswer: '' });
+export type Extras = {
+  pattern: string;
+  curveball: string;
+  curveAsked: boolean;
+  curveAnswer: string;
+  /** A mystery interviewer: the persona stays hidden until the review. */
+  mystery: boolean;
+};
+export const emptyExtras = (): Extras => ({ pattern: '', curveball: '', curveAsked: false, curveAnswer: '', mystery: false });
 
 export type Scores = Record<ScoreKey, number>;
 
@@ -112,6 +130,7 @@ const COMPLEXITY = /\bo\s*\(|\bo of\b|big o|log n|n squared|\blinear\b|quadratic
 /** Chrome's recogniser drops most "um"s and "uh"s, so this mostly catches the verbal ones. */
 const FILLER = /\b(um+|uh+|erm|like|basically|actually|literally|you know|kind of|sort of|i guess|so yeah)\b/gi;
 
+export const mentionsComplexity = (t: string) => COMPLEXITY.test(t);
 export const wordCount = (s: string) => (s.match(/\S+/g) ?? []).length;
 export const fillerCount = (s: string) => s.match(FILLER)?.length ?? 0;
 
@@ -222,6 +241,7 @@ export function cleanExtras(raw: unknown): Extras {
     curveball: text(r.curveball, MAX_LINE),
     curveAsked: r.curveAsked === true,
     curveAnswer: text(r.curveAnswer, MAX_NOTES),
+    mystery: r.mystery === true,
   };
 }
 
@@ -268,7 +288,8 @@ export function cleanDraft(raw: unknown): Draft | null {
     if (!t) continue;
     chars += t.length;
     if (chars > MAX_TRANSCRIPT_CHARS) break;
-    out.transcript.push({ stage: v.stage, who: v.who, text: t, at: num(v.at, MAX_STAGE_MS * 2) });
+    const tag = v.who === 'coach' && (LINE_TAGS as readonly string[]).includes(v.tag as string) ? (v.tag as LineTag) : undefined;
+    out.transcript.push({ stage: v.stage, who: v.who, text: t, at: num(v.at, MAX_STAGE_MS * 2), ...(tag ? { tag } : {}) });
   }
   return out;
 }
@@ -321,6 +342,9 @@ export type RoundFacts = {
   mistakes: MistakeKey[];
   /** The blind pattern call, if any. */
   pattern: string;
+  metrics: Metrics | null;
+  /** The AI interviewer's scores, when it ran the round. */
+  aiScores: Scores | null;
 };
 
 const DAY = 24 * 60 * 60_000;
@@ -418,6 +442,8 @@ export type Arena = {
   averages: Scores | null;
   /** Passed rounds in a row, newest first. */
   streak: number;
+  /** Self-score minus the evidence, averaged per signal over recent rounds (set by the server). */
+  calibration?: { key: ScoreKey; gap: number; rounds: number }[] | null;
 };
 
 export function arenaSummary(rounds: RoundFacts[], now: number): Arena {

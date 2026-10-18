@@ -32,13 +32,14 @@ type Phase = 'idle' | 'shuffle' | 'reveal' | 'count';
  * redacted), then a 3-2-1 and you are in the round with the clock running.
  * Under reduced motion the card is simply shown, with a Start button.
  */
-export function BlindDraw() {
+export function BlindDraw({ aiAvailable = false }: { aiAvailable?: boolean }) {
   const router = useRouter();
   const calm = useCalm();
   const [phase, setPhase] = useState<Phase>('idle');
   const [problem, setProblem] = useState<Problem | null>(null);
   const [count, setCount] = useState(3);
   const [error, setError] = useState<string | null>(null);
+  const [ai, setAi] = useState(aiAvailable);
 
   const go = (p: Problem) => router.push(`/interview/${p.slug}?go=1`);
 
@@ -47,7 +48,7 @@ export function BlindDraw() {
     setError(null);
     setPhase('shuffle');
     const [res] = await Promise.all([
-      apiPost<{ interview: InterviewRecord }>('/api/interview', { mode: 'blind' }),
+      apiPost<{ interview: InterviewRecord }>('/api/interview', { mode: 'blind', ai }),
       wait(calm ? 0 : 1400),
     ]);
     if (!res.ok) {
@@ -99,6 +100,15 @@ export function BlindDraw() {
                 </li>
               ))}
             </ul>
+            {aiAvailable && phase === 'idle' && (
+              <label className="iv-ai-toggle">
+                <input type="checkbox" checked={ai} onChange={(e) => setAi(e.target.checked)} />
+                <span>
+                  <b>{C.ai.toggle}</b>
+                  <small>{C.ai.toggleNote}</small>
+                </span>
+              </label>
+            )}
             {error && (
               <p role="alert" className="notice">
                 {error}

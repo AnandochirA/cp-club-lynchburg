@@ -16,6 +16,9 @@ export function StagePanel({
   checklist,
   coachLine,
   speaking,
+  thinking = false,
+  who,
+  finishLabel,
   elapsedMs,
   problem,
   isLast,
@@ -34,6 +37,12 @@ export function StagePanel({
   checklist: string[];
   coachLine: string;
   speaking: boolean;
+  /** The AI interviewer is working on a reply. */
+  thinking?: boolean;
+  /** Who is talking, for the card's caption. */
+  who?: string;
+  /** What the last step's button says while finishing (the AI writes its debrief then). */
+  finishLabel?: string;
   elapsedMs: number;
   problem: Problem;
   isLast: boolean;
@@ -85,7 +94,7 @@ export function StagePanel({
         <i style={{ width: `${pct}%` }} />
       </div>
 
-      <figure className="iv-coach m-0" data-speaking={speaking ? '1' : undefined}>
+      <figure className="iv-coach m-0" data-speaking={speaking ? '1' : undefined} data-thinking={thinking ? '1' : undefined}>
         <figcaption className="font-mono flex items-center justify-between gap-3 text-[11.5px] tracking-[0.14em] text-white/55 uppercase">
           <span className="flex items-center gap-2">
             <i className="iv-wave" aria-hidden="true">
@@ -93,7 +102,8 @@ export function StagePanel({
               <b />
               <b />
             </i>
-            {C.interviewer}
+            {who ?? C.interviewer}
+            {thinking && <span className="iv-thinking" aria-label="thinking">…</span>}
           </span>
           <button type="button" onClick={onRepeat} className="iv-link">
             {C.repeat}
@@ -155,7 +165,7 @@ export function StagePanel({
           className="btn btn-primary [clip-path:polygon(0_0,calc(100%-10px)_0,100%_10px,100%_100%,0_100%)] flex h-12 cursor-pointer items-center justify-center gap-2.5 rounded-none border-0 px-6 font-sans text-[15px] font-semibold text-white"
         >
           <span className="sheen" aria-hidden="true" />
-          {isLast ? (busy ? C.finishing : C.finish) : C.next}
+          {isLast ? (busy ? (finishLabel ?? C.finishing) : C.finish) : C.next}
           <Icon name="arrow" size={17} stroke={2.2} className="arrow" />
         </button>
         {!isLast && canSkip && (

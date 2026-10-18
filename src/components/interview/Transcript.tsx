@@ -14,11 +14,14 @@ export function Transcript({
   interim = '',
   full = false,
   live = false,
+  focus = null,
 }: {
   lines: Line[];
   interim?: string;
   full?: boolean;
   live?: boolean;
+  /** A line to scroll to and light up (from the game film). */
+  focus?: number | null;
 }) {
   const box = useRef<HTMLDivElement>(null);
   const pinned = useRef(true);
@@ -27,6 +30,11 @@ export function Transcript({
     const el = box.current;
     if (el && live && pinned.current) el.scrollTop = el.scrollHeight;
   }, [lines.length, interim, live]);
+
+  useEffect(() => {
+    if (focus === null) return;
+    box.current?.querySelector(`[data-i="${focus}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [focus]);
 
   if (lines.length === 0 && !interim) {
     return <p className="m-0 text-[14.5px] leading-[1.5] text-muted">{C.transcriptEmpty}</p>;
@@ -47,7 +55,7 @@ export function Transcript({
         const header = l.stage !== lastStage;
         lastStage = l.stage;
         return (
-          <div key={i}>
+          <div key={i} data-i={i} data-focus={focus === i ? '1' : undefined}>
             {header && <p className="iv-tr-stage font-mono">{stageById(l.stage).title}</p>}
             <p className="iv-tr-line" data-who={l.who}>
               <span className="font-mono iv-tr-at">{clock(l.at)}</span>

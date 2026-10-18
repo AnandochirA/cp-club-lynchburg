@@ -197,6 +197,29 @@ alter table interview_sessions add column if not exists mistakes text[] not null
 alter table interview_sessions add column if not exists next_time text;
 alter table interview_sessions add column if not exists extras jsonb not null default '{}'::jsonb;
 
+-- Round three. `persona`: who interviews you (see PERSONAS in
+-- interview-kit.ts). `ai`: the round is run by the AI interviewer.
+-- `ai_notes` are its private notes during the round (what it would write
+-- down), `ai_debrief` its write-up at the end, `ai_usage` the tokens and
+-- characters spent, for the cost estimate. None of these are sent to the
+-- browser before the round is finished.
+alter table interview_sessions add column if not exists persona text not null default 'coach'
+  check (persona in ('coach', 'stone', 'interrupter', 'misleader', 'rusher'));
+alter table interview_sessions add column if not exists ai boolean not null default false;
+alter table interview_sessions add column if not exists ai_notes jsonb not null default '[]'::jsonb;
+alter table interview_sessions add column if not exists ai_debrief jsonb;
+alter table interview_sessions add column if not exists ai_usage jsonb not null default '{}'::jsonb;
+
+-- The AI interviewer's private brief on a problem (the facts it answers
+-- clarifying questions from, the optimal approach, common mistakes). The
+-- same for everyone, so it is generated once per problem and kept.
+create table if not exists ai_briefs (
+  slug        text        primary key,
+  brief       jsonb       not null,
+  model       text        not null,
+  created_at  timestamptz not null default now()
+);
+
 -- Behavioral rounds. A member's story bank (STAR: situation, task, action,
 -- result) tagged with the competencies each story covers, and one row per
 -- practice answer: the recognised text of the answer and the follow-up, the

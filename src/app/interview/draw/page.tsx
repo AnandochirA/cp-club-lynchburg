@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { BlindDraw } from '@/components/interview/BlindDraw';
 import { interviewCopy as C } from '@/lib/interview-kit';
+import { aiAllowed } from '@/lib/interviewer';
 import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -11,5 +12,5 @@ export const metadata: Metadata = { title: C.blind.title, robots: { index: false
 export default async function DrawPage() {
   const session = await getSession();
   if (!session) redirect('/signin');
-  return <BlindDraw />;
+  return <BlindDraw aiAvailable={await aiAllowed(session)} />;
 }

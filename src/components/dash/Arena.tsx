@@ -192,6 +192,16 @@ export function Arena({ arena, behavioral }: { arena: ArenaData | null; behavior
               );
             })}
             {arena.streak > 1 && <p className="font-mono m-0 text-[13px] text-[#52D68A]">{C.streak(arena.streak)}</p>}
+            {(() => {
+              const worst = arena.calibration?.reduce((a, b) => (Math.abs(b.gap) > Math.abs(a.gap) ? b : a));
+              if (!worst || Math.abs(worst.gap) < 0.5) return arena.calibration ? <p className="m-0 text-[13px] text-muted">{C.calibrated}</p> : null;
+              const title = RUBRIC.find((x) => x.key === worst.key)!.title;
+              return (
+                <p className="arena-calib m-0" data-dir={worst.gap > 0 ? 'over' : 'under'}>
+                  {worst.gap > 0 ? C.overrate(title, worst.gap) : C.underrate(title, -worst.gap)}
+                </p>
+              );
+            })()}
           </div>
 
           <div className="flex flex-col gap-3">
