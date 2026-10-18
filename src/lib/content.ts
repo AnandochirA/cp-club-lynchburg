@@ -8,102 +8,17 @@ import { RANK_KEYS, curriculum, type RankKey } from './curriculum';
 
 export const club = {
   name: 'Competitive Programming',
-  full: 'Competitive Programming Club',
+  full: 'Competitive Programming',
   school: 'University of Lynchburg',
-  tagline: 'club @ lynchburg',
+  tagline: 'interview prep @ lynchburg',
 };
 
 export const nav = [
-  { href: '#why', label: 'Why join' },
-  { href: '#week', label: 'Schedule' },
-  { href: '#ranks', label: 'Ranks' },
-  { href: '#events', label: 'Events' },
+  { href: '#how', label: 'How it works' },
+  { href: '#ladder', label: 'The ladder' },
+  { href: '#room', label: 'Mock rounds' },
   { href: '#faq', label: 'FAQ' },
 ];
-
-export const hero = {
-  pill: { tag: 'new club', text: 'Study room coming soon', href: '#events' },
-  line1: 'Get interview-ready.',
-  line2: 'Have fun doing it.',
-  sub: 'Competitive Programming Club at University of Lynchburg. Solve puzzles, compete in contests, and build the problem-solving skills top tech companies hire for.',
-  subStrong: 'No experience needed.',
-  primaryCta: 'Sign up',
-  secondaryCta: 'See Upcoming Events',
-  /** The code that types itself out in the hero editor. */
-  file: 'two_sum.py',
-  terminal: { cmd: 'python3 two_sum.py', result: '3/3 tests passed', time: '· 41 ms' },
-  toast: { title: 'Accepted', sub: 'two_sum · 41 ms' },
-};
-
-export const ticker = [
-  'No experience needed',
-  'Every major welcome',
-  'Free to join',
-  'Any language to start',
-  'Track every solve',
-  'Interview prep',
-  'Weekly contests',
-  'Come when you can',
-];
-
-export const why = {
-  eyebrow: 'why join',
-  title: 'What you get out of it.',
-  cards: [
-    {
-      icon: 'code' as const,
-      title: 'Ace technical interviews',
-      body: 'The problems we solve are the kind Google, Amazon, and Meta ask. Practice here, and interview day feels familiar.',
-    },
-    {
-      icon: 'trophy' as const,
-      title: 'Compete for real',
-      body: 'Climb a real ladder from Guardian to Divine, then test yourself in live contests.',
-    },
-    {
-      icon: 'doc' as const,
-      title: 'Stand out on your resume',
-      body: 'Contest ratings and results are concrete proof of skill. They say more than “proficient in Python.”',
-    },
-    {
-      icon: 'users' as const,
-      title: 'Find your people',
-      body: 'A community that loves hard problems, and people to solve them with.',
-    },
-  ],
-};
-
-export const week = {
-  eyebrow: 'a typical week',
-  title: 'Come to one thing, or all four.',
-  when: 'Time and room coming soon',
-  items: [
-    {
-      label: 'Weekly',
-      title: 'Beginner session',
-      body: 'We teach one core idea, then solve problems on it together. Zero experience is fine.',
-      extra: 'when' as const,
-    },
-    {
-      label: 'Weekly',
-      title: 'Advanced session',
-      body: 'Harder problems and contest strategy. We break down the tricky ones together.',
-      extra: 'when' as const,
-    },
-    {
-      label: 'Weekends',
-      title: 'Practice contest',
-      body: 'A timed contest with a live leaderboard. Low stakes, real bragging rights.',
-      extra: 'board' as const,
-    },
-    {
-      label: 'Every day',
-      title: 'Problem of the day',
-      body: 'A new problem every day, picked from your own rank’s set. Solve it and keep your streak.',
-      extra: 'streak' as const,
-    },
-  ],
-};
 
 /* ---------------------------------------------------------------- ranks */
 
@@ -260,33 +175,153 @@ export const rankSection = {
   },
 };
 
-/* --------------------------------------------------------------- events */
+/* ------------------------------------------------------------- landing */
 
-export type UpcomingEvent = { tag: string; title: string; meta: string; real: boolean };
+export const hero = {
+  eyebrow: 'for university of lynchburg students',
+  /** Three lines. The first is set as a green judge verdict, the last in crimson. */
+  lines: ['Accepted', 'is not', 'hired.'],
+  sub: 'LeetCode checks your output. An interviewer grades how you think: the questions you ask, the edge cases you catch, how you test. Practice both here.',
+  subStrong: 'Free, and tracked from your LeetCode.',
+  primaryCta: 'Create your account',
+  secondaryCta: 'How a round works',
+  /** Under the live round on the right. */
+  caption: 'A real round, sped up: the seven steps, the coach, your transcript, the verdict.',
+};
 
-export const events = {
-  eyebrow: 'upcoming events',
-  title: 'Start in the study room.',
-  note: 'New events will be announced here.',
-  featured: {
-    every: 'Coming',
-    day: 'Soon',
-    /** Small pill under the day. Leave empty to hide it (e.g. while the schedule is unset). */
-    time: '',
-    pill: 'Weekly',
-    title: 'Study room',
-    body: 'Drop in, solve problems side by side, and compete with whoever’s in the room.',
-    /** Facts about the event. `highlight` gives a row the brighter treatment. */
-    meta: [{ icon: 'trophy', text: 'Leaderboard tracks progress' }] as {
-      icon: 'pin' | 'chat' | 'trophy' | 'pizza';
-      text: string;
-      highlight?: boolean;
-    }[],
-    quiz: { text: 'Placement + find your rank', hint: '4 problems · 90 min' },
-    primaryCta: 'Sign up',
-  },
-  /** Extra events beside the study room. Empty hides the column; the study room goes full width. */
-  upcoming: [] as UpcomingEvent[],
+/**
+ * The mock round that plays itself in the hero. Lines come in order; `at` is
+ * the round clock it shows (in minutes), `stage` lights the rail.
+ */
+export const demoRound = {
+  problem: { title: 'Merge Intervals', meta: '#56 · medium · intervals' },
+  script: [
+    { stage: 'read', at: 0.3, who: 'coach', text: 'Read it, then tell me what it asks in your own words.' },
+    { stage: 'read', at: 2.4, who: 'you', text: 'Merge every pair of overlapping intervals and return what is left.' },
+    { stage: 'clarify', at: 4.1, who: 'you', text: 'Are they sorted? And do [1,4] and [4,5] count as overlapping?' },
+    { stage: 'clarify', at: 5.6, who: 'coach', text: 'Not sorted. Touching counts.' },
+    { stage: 'edges', at: 9.2, who: 'you', text: 'Empty list. One interval. One interval swallowing another.' },
+    { stage: 'approach', at: 14.1, who: 'you', text: 'Sort by start, then sweep once. O(n log n) time, O(n) space.' },
+    { stage: 'pseudo', at: 19.6, who: 'you', text: 'Sort. For each one: overlaps the last? Extend it. Otherwise push.' },
+    { stage: 'code', at: 38.2, who: 'code', text: '' },
+    { stage: 'test', at: 43.4, who: 'you', text: '[[1,3],[2,6],[8,10]] gives [[1,6],[8,10]]. Still O(n log n).' },
+  ] as { stage: string; at: number; who: 'coach' | 'you' | 'code'; text: string }[],
+  code: [
+    'def merge(iv):',
+    '    iv.sort(key=lambda x: x[0])',
+    '    out = []',
+    '    for s, e in iv:',
+    '        if out and s <= out[-1][1]:',
+    '            out[-1][1] = max(out[-1][1], e)',
+    '        else:',
+    '            out.append([s, e])',
+    '    return out',
+  ],
+  accepted: 'Accepted · 4 ms',
+  stamp: { who: 'Coding round', word: 'Strong hire', sub: '4 of 4 signals' },
+};
+
+export const ticker = [
+  'Built for interviews',
+  'Free',
+  'Any major',
+  'Tracked from LeetCode',
+  'Talk it out loud',
+  'Mock rounds',
+  'Behavioral too',
+];
+
+/** The four signals, against what a LeetCode submission can show. */
+export const signals = {
+  eyebrow: 'what gets graded',
+  title: 'Four signals. LeetCode sees one.',
+  lead: 'Most coding rounds are scored on the same four things. A green Accepted proves the code runs. The other three only exist if you say them out loud.',
+  judge: { label: 'What LeetCode sees', verdict: 'Accepted', meta: 'Runtime 4 ms · beats 91%' },
+  room: 'What the interviewer writes down',
+  /** Which of the RUBRIC signals a submission alone can prove. */
+  seenByJudge: 'coding',
+  strong: 'Strong hire looks like',
+};
+
+export const how = {
+  eyebrow: 'how it works',
+  title: 'From linked to ready.',
+  /** A real sequence, so it is numbered. */
+  steps: [
+    {
+      title: 'Link LeetCode',
+      body: 'Put a one-time code in your LeetCode bio. From then on every accepted solve is read automatically.',
+      meta: 'about 2 minutes',
+    },
+    {
+      title: 'Take the placement',
+      body: 'Four problems, one per tier, 90 minutes on the clock. Your result sets the rank you start at.',
+      meta: '4 problems · 90 min',
+    },
+    {
+      title: 'Climb your rank',
+      body: 'Solve every problem in your rank’s set to move up. No cherry-picking, nothing to submit by hand.',
+      meta: `${ladder.total} problems · 5 ranks`,
+    },
+    {
+      title: 'Rehearse the round',
+      body: 'Run any problem as a 45-minute mock, out loud, with a coach and a timer. Then watch the tape back.',
+      meta: '7 steps · 45 min',
+    },
+  ],
+};
+
+export const ladderSection = {
+  eyebrow: 'the ladder',
+  title: 'Every hexagon is a problem.',
+  lead: `${ladder.total} problems from Blind 75, NeetCode 150 and the big-tech favourites, ordered so each rank builds on the one before. Hover the grid to see them.`,
+  stats: [
+    { value: String(ladder.total), label: 'problems' },
+    { value: '5', label: 'ranks' },
+    { value: `~${ladder.perWeek}`, label: 'a week' },
+  ],
+  tracks: [
+    { name: 'Beginner Track', range: 'Guardian → Archon', color: '#D98A4A' },
+    { name: 'Competitive Track', range: 'Legend → Divine', color: '#F4C340' },
+  ],
+  reassurance: 'Starting at Guardian is totally normal. That’s where most great programmers began.',
+};
+
+export const roomSection = {
+  eyebrow: 'mock rounds',
+  title: 'Forty-five minutes, rehearsed.',
+  lead: 'Any problem on the ladder becomes a full interview with a coach, a clock and a transcript. Below is the round to scale. Almost half of it happens before you write any code, and that half is where most rounds are won or lost.',
+  barLabel: 'One round, drawn to scale',
+  features: [
+    { icon: 'chat' as const, title: 'Out loud', body: 'The coach speaks each step. Your words become a transcript, and long silences get a nudge.' },
+    { icon: 'doc' as const, title: 'Problem on the page', body: 'The statement sits next to your notes, so you read, clarify and plan without leaving the round.' },
+    { icon: 'timer' as const, title: 'Blind draw', body: 'No title hints, no topic tag. Name the pattern yourself, like the real thing.' },
+    { icon: 'up' as const, title: 'Curveballs', body: '“Now it doesn’t fit in memory.” A follow-up lands while you test.' },
+    { icon: 'trophy' as const, title: 'Game film', body: 'Your round as a timeline: where you talked, where you went quiet, where the idea came.' },
+    { icon: 'badge' as const, title: 'Redo queue', body: 'A round that went badly comes back after 3 days, then 14. Pass both and it’s done.' },
+  ],
+};
+
+export const loop = {
+  eyebrow: 'the rest of the loop',
+  title: 'Not just the coding round.',
+  cards: [
+    {
+      tag: 'Behavioral',
+      title: 'Tell me about a time…',
+      body: 'Timed behavioral rounds with follow-up probes, and a story bank so your best STAR stories are ready before you need them.',
+    },
+    {
+      tag: 'Study rooms',
+      title: 'Method, not answers.',
+      body: 'One chat room per rank, unlocked when you reach it. Talk through ideas and where you got stuck. No pasted solutions.',
+    },
+    {
+      tag: 'The Arena',
+      title: 'Know when you’re ready.',
+      body: 'A readiness score built from your finished rounds: your weakest signal, your redo queue and how your self-scores compare to the evidence.',
+    },
+  ],
 };
 
 /* ------------------------------------------------------------------ faq */
@@ -298,8 +333,12 @@ export const faqSection = {
 
 export const faq: [string, string][] = [
   [
-    'Do I need to be good at coding?',
-    'You should know one language and basic data structures. From there the ladder is interview-grade: about 80% Mediums from Guardian on, built for people preparing for big-tech assessments and technical rounds.',
+    'Who is this for?',
+    'University of Lynchburg students getting ready for internship and new-grad technical interviews: online assessments, coding rounds and behavioral rounds. Every major is welcome.',
+  ],
+  [
+    'Do I need to be good at coding already?',
+    'You should know one language and the basic data structures. The ladder is interview-grade from the start: about 80% Mediums, built for big-tech assessments.',
   ],
   [
     'How many problems is it, really?',
@@ -307,48 +346,32 @@ export const faq: [string, string][] = [
   ],
   [
     'Do I need a LeetCode account?',
-    'Yes, and it’s free. You link it right after you sign up. That’s how we track your progress, so there’s nothing to submit by hand.',
+    'Yes, and it’s free. You link it right after you sign up. That’s how your progress is tracked, so there’s nothing to submit by hand.',
+  ],
+  [
+    'What happens in a mock round?',
+    'Seven timed steps over 45 minutes: read, clarify, edge cases, approach, pseudocode, code, then test. The coach reads each step out loud and listens; you code on LeetCode. At the end you score yourself on the four signals and get the tape back.',
+  ],
+  [
+    'Do I need a microphone?',
+    'It’s best with one, in Chrome or Edge, since talking out loud is the point. Other browsers get a text-only mode that still runs the whole round.',
   ],
   [
     'What if I do badly on the placement?',
-    'That’s fine. Your rank just tells us where to start you. You get one attempt every 30 days, and you can level up anytime.',
-  ],
-  [
-    'How do I level up?',
-    'Solve every problem in your rank’s set on LeetCode. We read your accepted solutions automatically and move you up when the set is done.',
+    'That’s fine. Your rank just sets where you start. You get one attempt every 30 days, and you can level up any time.',
   ],
   [
     'Do problems I already solved count?',
-    'Only solves after you link your account. Re-solving old ones is good practice anyway: redo what you needed help on after a day, three days and a week.',
+    'Only solves after you link your account. Re-solving old ones cold is good practice anyway.',
   ],
-  [
-    'Do I have to be a CS major?',
-    'No. Math, physics, data science, and every other major are welcome. If you like puzzles, you’ll fit right in.',
-  ],
-  [
-    'What language do we use?',
-    'Whatever you’re fastest in. Python and C++ are the most common in interviews.',
-  ],
-  ['How much time does it take?', 'About ten problems a week. There’s no attendance requirement.'],
   ['Does it cost anything?', 'No. It’s free.'],
 ];
-
-/* ----------------------------------------------------------- leadership */
-
-export const leadership = {
-  eyebrow: 'leadership',
-  title: 'Who’s behind it.',
-  people: [
-    { initial: 'A', name: 'Anand', role: 'President', line: 'CS · Class of 2027' },
-    { initial: 'J', name: 'Justin', role: 'Director of Outreach', line: 'CS · Class of 2027' },
-  ],
-};
 
 /* ----------------------------------------------------------------- join */
 
 export const join = {
   eyebrow: 'sign up',
-  title: 'Create your account',
+  title: 'Start your first round.',
   sub: 'A few quick questions, then link your LeetCode account.',
   subNowrap: 'No experience needed.',
   fields: {
@@ -408,14 +431,14 @@ export const auth = {
     sub: 'Verify your LeetCode account to continue. There’s no password to remember.',
     newHere: 'New here?',
     createAccount: 'Create an account',
-    back: '← Back to the club site',
+    back: '← Back to the site',
   },
   /** The three steps of setting up an account. */
   steps: ['Account', 'LeetCode', 'Placement'],
 };
 
 export const footer = {
-  line: `A student organization at ${club.school}.`,
+  line: `Interview prep for students at the ${club.school}.`,
   links: [
     { href: '#join', label: 'Sign up' },
     { href: '/signin', label: 'Sign in' },

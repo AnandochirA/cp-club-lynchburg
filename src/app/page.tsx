@@ -1,14 +1,15 @@
 import { Nav } from '@/components/Nav';
 import { Hero } from '@/components/Hero';
 import { Ticker } from '@/components/Ticker';
-import { WhyJoin } from '@/components/WhyJoin';
-import { Week } from '@/components/Week';
-import { Ranks } from '@/components/Ranks';
-import { Events } from '@/components/Events';
+import { Signals } from '@/components/landing/Signals';
+import { Room } from '@/components/landing/Room';
+import { How } from '@/components/landing/How';
+import { Ladder } from '@/components/landing/Ladder';
+import { Loop } from '@/components/landing/Loop';
 import { Faq } from '@/components/Faq';
-import { Leadership } from '@/components/Leadership';
 import { Join } from '@/components/JoinForm';
 import { Footer } from '@/components/Footer';
+import './landing.css';
 
 export default function Page() {
   return (
@@ -17,12 +18,12 @@ export default function Page() {
       <main className="flex flex-col">
         <Hero />
         <Ticker />
-        <WhyJoin />
-        <Week />
-        <Ranks />
-        <Events />
+        <Signals />
+        <Room />
+        <How />
+        <Ladder />
+        <Loop />
         <Faq />
-        <Leadership />
         <Join />
       </main>
       <Footer />

@@ -1,7 +1,7 @@
 import 'server-only';
 import { RANK_KEYS, curriculum } from '@/lib/curriculum';
 import { db } from '@/lib/db';
-import { PERSONA_KEYS, curveballsFor, type PersonaKey } from '@/lib/interview-kit';
+import { curveballsFor } from '@/lib/interview-kit';
 import {
   RESUME_HOURS,
   MAX_NEXT_TIME,
@@ -42,7 +42,6 @@ export type InterviewRecord = {
   metrics: Metrics | null;
   mistakes: MistakeKey[];
   nextTime: string | null;
-  persona: PersonaKey;
 };
 
 /** What the member adds after the round. */
@@ -71,7 +70,6 @@ type Row = {
   mistakes: MistakeKey[] | null;
   next_time: string | null;
   extras: Extras | null;
-  persona: PersonaKey;
 };
 
 const iso = (v: Date | string) => new Date(v).toISOString();
@@ -93,7 +91,6 @@ function toRecord(r: Row): InterviewRecord {
     metrics: r.metrics ?? null,
     mistakes: r.mistakes ?? [],
     nextTime: r.next_time ?? null,
-    persona: r.persona ?? 'coach',
   };
 }
 
@@ -109,15 +106,9 @@ export async function findResumable(session: Session, slug: string): Promise<Int
   return rows[0] ? toRecord(rows[0]) : null;
 }
 
-export type StartOptions = { mode: Mode; extras: Extras; persona: PersonaKey };
+export type StartOptions = { mode: Mode; extras: Extras };
 
-/** "mystery" and blind draws pick a persona at random; the Coach is the default. */
-export function choosePersona(asked: unknown, mode: Mode): { persona: PersonaKey; mystery: boolean } {
-  if (asked === 'mystery' || mode === 'blind') return { persona: pick(PERSONA_KEYS), mystery: asked === 'mystery' };
-  return { persona: PERSONA_KEYS.includes(asked as PersonaKey) ? (asked as PersonaKey) : 'coach', mystery: false };
-}
-
-/** Start a round. `extras` carries the curveball and the mystery flag. */
+/** Start a round. `extras` carries the curveball. */
 export async function startInterview(session: Session, slug: string, o: StartOptions): Promise<InterviewRecord> {
   if (!findProblem(slug)) throw new InterviewError('bad_problem');
   const sql = db();
@@ -129,9 +120,9 @@ export async function startInterview(session: Session, slug: string, o: StartOpt
   const d = emptyDraft();
   d.extras = o.extras;
   const rows = (await sql`
-    insert into interview_sessions (member_id, slug, mode, stage, stages, transcript, extras, persona)
+    insert into interview_sessions (member_id, slug, mode, stage, stages, transcript, extras)
     values (${session.member.id}, ${slug}, ${o.mode}, ${d.stage}, ${JSON.stringify(d.stages)}::jsonb,
-            ${JSON.stringify(d.transcript)}::jsonb, ${JSON.stringify(o.extras)}::jsonb, ${o.persona})
+            ${JSON.stringify(d.transcript)}::jsonb, ${JSON.stringify(o.extras)}::jsonb)
     returning *
   `) as Row[];
   return toRecord(rows[0]);

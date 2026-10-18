@@ -50,7 +50,7 @@ export function useSpeech({
   onFinal: (text: string) => void;
   /** Any recognition activity at all (interim words included): you are talking. */
   onHeard: () => void;
-  /** The browser voice's speed (personas talk at different speeds). */
+  /** The browser voice's speed. */
   rate?: number;
 }) {
   /** False until the browser's support has been checked (it can't be known on the server). */

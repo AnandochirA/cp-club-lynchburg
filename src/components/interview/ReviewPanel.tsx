@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Problem } from '@/lib/curriculum';
 import type { InterviewRecord, PostMortem } from '@/lib/interview';
-import { MISTAKES, PERSONAS, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C, patternMatches } from '@/lib/interview-kit';
+import { MISTAKES, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C, patternMatches } from '@/lib/interview-kit';
 import { calibrate, signalScores } from '@/lib/film';
 import {
   MAX_NEXT_TIME,
@@ -50,8 +50,6 @@ export function ReviewPanel({
   const t = record.talkStats;
   const d = record.draft;
   const verdict = verdictOf(record.scores);
-  const persona = PERSONAS[record.persona];
-  const revealPersona = record.persona !== 'coach' || d.extras.mystery;
   // The yardstick for calibration: what the signals say.
   const blindHit = record.mode === 'blind' ? patternMatches(d.extras.pattern, problem.topic) : null;
   const bench = signalScores(record.metrics, t, record.acAfterStart, record.mistakes, blindHit);
@@ -147,14 +145,6 @@ export function ReviewPanel({
           )}
         </p>
       </section>
-
-      {revealPersona && (
-        <section className="panel iv-reveal-persona flex flex-col gap-3 p-5 lg:p-7" data-persona={record.persona} aria-label={C.persona.revealTitle}>
-          <span className="font-mono text-[11.5px] tracking-[0.14em] text-dim uppercase">{C.persona.revealTitle}</span>
-          <span className="iv-reveal-name font-display caps">{persona.name}</span>
-          <p className="m-0 max-w-[64ch] text-[15.5px] leading-[1.55] text-soft">{persona.reveal}</p>
-        </section>
-      )}
 
       {d.transcript.length > 1 && (
         <section className="panel flex flex-col gap-4 p-5 lg:p-7" aria-labelledby="film-title">

@@ -67,10 +67,8 @@ export type Extras = {
   curveball: string;
   curveAsked: boolean;
   curveAnswer: string;
-  /** A mystery interviewer: the persona stays hidden until the review. */
-  mystery: boolean;
 };
-export const emptyExtras = (): Extras => ({ pattern: '', curveball: '', curveAsked: false, curveAnswer: '', mystery: false });
+export const emptyExtras = (): Extras => ({ pattern: '', curveball: '', curveAsked: false, curveAnswer: '' });
 
 export type Scores = Record<ScoreKey, number>;
 
@@ -241,7 +239,6 @@ export function cleanExtras(raw: unknown): Extras {
     curveball: text(r.curveball, MAX_LINE),
     curveAsked: r.curveAsked === true,
     curveAnswer: text(r.curveAnswer, MAX_NOTES),
-    mystery: r.mystery === true,
   };
 }
 

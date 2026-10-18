@@ -32,12 +32,12 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: `${club.name} Club · ${club.school}`,
+  title: `${club.name} · Interview prep at ${club.school}`,
   description:
-    'Get interview-ready. Have fun doing it. A competitive programming club at the University of Lynchburg — beginners very welcome.',
+    'Accepted is not hired. A 250-problem ladder tracked from your LeetCode, plus full 45-minute mock interviews out loud. Free for University of Lynchburg students.',
   openGraph: {
-    title: `${club.name} Club · ${club.school}`,
-    description: 'Get interview-ready. Have fun doing it. Beginners very welcome.',
+    title: `${club.name} · Interview prep at ${club.school}`,
+    description: 'Accepted is not hired. Practice the whole technical interview, out loud.',
     type: 'website',
   },
 };

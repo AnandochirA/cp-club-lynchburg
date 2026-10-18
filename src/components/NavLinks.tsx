@@ -14,7 +14,7 @@ export function NavLinks() {
   useEffect(() => {
     const ids = nav.map((n) => n.href).filter((h) => h.startsWith('#')).map((h) => h.slice(1));
     // Watch the sections after the last nav link too, so the underline clears once you pass them.
-    const sections = [...ids, 'team', 'join']
+    const sections = [...ids, 'loop', 'join']
       .map((id) => document.getElementById(id))
       .filter((el): el is HTMLElement => !!el);
     const io = new IntersectionObserver(
