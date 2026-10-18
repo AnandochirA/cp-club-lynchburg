@@ -5,12 +5,13 @@ import { useRouter } from 'next/navigation';
 import '../app/dash.css';
 import { apiErrors, memberPage as M, rankName, ranks, roadmap } from '@/lib/content';
 import { curriculum, type RankKey } from '@/lib/curriculum';
-import { apiDelete, apiPost } from '@/lib/client-api';
+import { apiDelete, apiGet, apiPost } from '@/lib/client-api';
+import { findProblem, type Arena as ArenaData } from '@/lib/interview-logic';
 import { TIERS } from '@/lib/hexgrid';
 import type { MemberView } from '@/lib/member-view';
 import { AppBar } from './dash/AppBar';
 import { Ceremony } from './dash/Ceremony';
-import { InterviewReps } from './dash/InterviewReps';
+import { Arena } from './dash/Arena';
 import { useCalm } from './dash/hooks';
 import { Momentum } from './dash/Momentum';
 import { MyGrid } from './dash/MyGrid';
@@ -42,6 +43,18 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
   const [hl, setHl] = useState<string | null>(null);
   const [placing, setPlacing] = useState(initial.placement?.state === 'active');
   const freshTimer = useRef(0);
+  const [arena, setArena] = useState<ArenaData | null>(null);
+
+  // The Arena loads on its own so the rest of the dashboard never waits for it.
+  useEffect(() => {
+    let live = true;
+    apiGet<{ arena: ArenaData }>('/api/interview').then((res) => {
+      if (live && res.ok) setArena(res.data.arena);
+    });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const rank = ranks.find((r) => r.key === me.rank)!;
   const next = me.nextRank ? ranks.find((r) => r.key === me.nextRank)! : null;
@@ -49,10 +62,13 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
   const solvedSet = useMemo(() => new Set(me.solved), [me.solved]);
   const set = curriculum[me.focus];
   const left = useMemo(() => new Set(me.progress.remaining), [me.progress.remaining]);
-  const upNext = useMemo(
-    () => me.progress.remaining.slice(0, 3).map((slug) => set.find((p) => p.slug === slug)!).filter(Boolean),
-    [me.progress.remaining, set],
-  );
+  // Redos that are due lead "Up next", then the next unsolved problems in your set.
+  const redoDue = useMemo(() => new Set(arena?.redo.due.map((d) => d.slug) ?? []), [arena]);
+  const upNext = useMemo(() => {
+    const redo = [...redoDue].map((slug) => findProblem(slug)).filter((p): p is NonNullable<typeof p> => !!p);
+    const fresh = me.progress.remaining.map((slug) => set.find((p) => p.slug === slug)!).filter((p) => p && !redoDue.has(p.slug));
+    return [...redo, ...fresh].slice(0, 3);
+  }, [me.progress.remaining, set, redoDue]);
   // Finished Ancient: the target is now Divine's 30 Hards, but the rank itself
   // still needs an officer to approve an assessment.
   const aimingAtDivine = me.focus === 'divine' && me.rank !== 'divine';
@@ -180,11 +196,16 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             rankName={rankName(me.focus)}
             left={left.size}
             divineReady={aimingAtDivine && left.size === 0}
+            redo={redoDue}
             onHover={setHl}
           />
         </div>
 
         <div className="dx" style={{ ['--dx' as string]: 6 }}>
+          <Arena arena={arena} />
+        </div>
+
+        <div className="dx" style={{ ['--dx' as string]: 7 }}>
           <RoomTeaser room={me.rank} />
         </div>
 
@@ -196,8 +217,6 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             <Topics solved={solvedSet} rank={me.rank} />
           </div>
         </div>
-
-        <InterviewReps />
 
         <ProblemList focus={me.focus} set={set} left={left} fresh={fresh} onHover={setHl} />
 

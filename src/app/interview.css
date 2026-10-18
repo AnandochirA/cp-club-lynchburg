@@ -940,3 +940,343 @@
 .iv-rail[data-locked] .iv-step[data-state='current']:hover {
   background: color-mix(in srgb, var(--tier) 12%, transparent);
 }
+
+/* ================================================================ the arena */
+.arena {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(228, 0, 43, 0.14), transparent 55%),
+    linear-gradient(180deg, #12131a 0%, #0e0f14 100%);
+}
+.arena-skeleton {
+  min-height: 420px;
+}
+.arena-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+  align-items: end;
+}
+@media (min-width: 1024px) {
+  .arena-head {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 56px;
+  }
+}
+.arena-title {
+  font-size: clamp(56px, 10vw, 104px);
+  font-weight: 900;
+  line-height: 0.8;
+}
+.arena-ready {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.arena-ready-n {
+  font-size: clamp(72px, 12vw, 112px);
+  font-weight: 900;
+  line-height: 0.8;
+}
+.arena-parts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 4px;
+}
+.arena-part {
+  display: flex;
+  flex-basis: 0;
+  min-width: 96px;
+  flex-direction: column;
+  gap: 6px;
+}
+.arena-part-bar {
+  display: block;
+  height: 10px;
+  background: color-mix(in srgb, var(--pc) 14%, transparent);
+}
+.arena-part-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--pc);
+  transform-origin: left;
+  animation: arena-fill 1.1s var(--ease-out-expo) 0.4s backwards;
+}
+@keyframes arena-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+.arena-part-label {
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--color-dim);
+}
+.arena-part-label b {
+  color: var(--pc);
+}
+.arena-h {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+
+/* ------------------------------------------------------------- the doors */
+.arena-doors {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+@media (min-width: 768px) {
+  .arena-doors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1280px) {
+  .arena-doors.three {
+    grid-template-columns: 1.15fr 1fr 1fr;
+  }
+}
+.door {
+  --spot: rgba(228, 0, 43, 0.16);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 250px;
+  padding: 22px 22px 18px;
+  overflow: hidden;
+  color: var(--color-text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+  transition:
+    border-color 0.3s,
+    background-color 0.3s,
+    translate 0.4s var(--ease-out-expo);
+}
+a.door:hover {
+  color: var(--color-text);
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+  translate: 0 -3px;
+}
+.door-kicker {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-crimson-hi);
+}
+.door-title {
+  font-size: 40px;
+  font-weight: 900;
+  line-height: 0.86;
+}
+.door-big {
+  font-size: 76px;
+  font-weight: 900;
+  line-height: 0.8;
+}
+.door-sub {
+  max-width: 34ch;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+.door-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 12px;
+  font-size: 12.5px;
+  color: var(--color-soft);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.door .arrow {
+  transition: translate 0.4s var(--ease-out-expo);
+}
+.door:hover .arrow {
+  translate: 6px 0;
+}
+
+/* the blind door: three face-down cards that fan out on hover */
+.door-blind {
+  background:
+    radial-gradient(80% 90% at 100% 100%, rgba(228, 0, 43, 0.22), transparent 60%),
+    rgba(255, 255, 255, 0.03);
+}
+.door-deck {
+  position: absolute;
+  right: 26px;
+  bottom: 58px;
+  width: 92px;
+  height: 128px;
+}
+.door-deck i {
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+  background:
+    repeating-linear-gradient(60deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 10px),
+    repeating-linear-gradient(-60deg, rgba(0, 0, 0, 0.18) 0 2px, transparent 2px 10px),
+    linear-gradient(160deg, #ff1747, #a3001e);
+  transform-origin: 50% 100%;
+  transition: rotate 0.5s var(--ease-spring), translate 0.5s var(--ease-spring);
+}
+.door-deck i:nth-child(1) {
+  rotate: -6deg;
+}
+.door-deck i:nth-child(2) {
+  rotate: 2deg;
+}
+.door-deck i:nth-child(3) {
+  rotate: 9deg;
+  translate: 4px -2px;
+}
+.door-blind:hover .door-deck i:nth-child(1) {
+  rotate: -22deg;
+  translate: -18px 0;
+}
+.door-blind:hover .door-deck i:nth-child(2) {
+  rotate: 0deg;
+  translate: 0 -10px;
+}
+.door-blind:hover .door-deck i:nth-child(3) {
+  rotate: 22deg;
+  translate: 18px 0;
+}
+.door-blind .door-sub {
+  max-width: 26ch;
+}
+@media (max-width: 420px) {
+  .door-deck {
+    opacity: 0.35;
+  }
+}
+
+/* the redo door glows when something is due */
+.door-redo[data-due] {
+  border-color: rgba(246, 196, 83, 0.35);
+  background:
+    radial-gradient(90% 80% at 0% 0%, rgba(246, 196, 83, 0.12), transparent 60%),
+    rgba(255, 255, 255, 0.03);
+}
+.door-redo[data-due] .door-big {
+  color: var(--color-gold);
+}
+.door-redo .door-kicker {
+  color: var(--color-gold);
+}
+.redo-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
+  padding: 0 10px;
+  font-size: 14.5px;
+  color: var(--color-text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.05);
+  transition: background-color 0.2s;
+}
+.redo-row:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.1);
+}
+.redo-row[data-overdue] {
+  box-shadow: inset 3px 0 0 #ff5c77;
+}
+.redo-box {
+  flex: none;
+  min-width: 30px;
+  padding: 2px 5px;
+  font-size: 10.5px;
+  text-align: center;
+  color: #0b0c10;
+  background: var(--color-gold);
+}
+
+/* the behavioral door: one hexagon per competency, lit when a story covers it */
+.door-behav .door-kicker {
+  color: #c89bff;
+}
+.behav-hexes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 220px;
+}
+.behav-hexes i {
+  width: 22px;
+  height: 25px;
+  clip-path: var(--hex);
+  background: rgba(255, 255, 255, 0.1);
+}
+.behav-hexes i[data-on] {
+  background: #c89bff;
+}
+
+/* --------------------------------------------------------- lower row */
+.break-bar {
+  display: block;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.break-bar > i {
+  display: block;
+  height: 100%;
+  background: rgba(255, 143, 161, 0.55);
+}
+.break-bar[data-top] > i {
+  background: #ff5c77;
+}
+.recent-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 40px;
+  padding: 0 12px;
+  font-size: 14.5px;
+  color: var(--color-text);
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+.recent-row:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.08);
+}
+.mode-tag {
+  flex: none;
+  padding: 2px 6px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-soft);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* the REDO ribbon on an Up next ticket */
+.tk-ribbon {
+  position: absolute;
+  top: 16px;
+  right: -34px;
+  z-index: 3;
+  width: 130px;
+  padding: 4px 0;
+  font: 700 11px var(--font-mono);
+  letter-spacing: 0.18em;
+  text-align: center;
+  text-transform: uppercase;
+  color: #0b0c10;
+  background: var(--color-gold);
+  rotate: 45deg;
+  pointer-events: none;
+}
+.tk[data-redo] {
+  position: relative;
+}

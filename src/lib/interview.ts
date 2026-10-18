@@ -6,6 +6,7 @@ import {
   RESUME_HOURS,
   MAX_NEXT_TIME,
   STARTS_PER_DAY,
+  arenaSummary,
   cleanDraft,
   emptyDraft,
   emptyExtras,
@@ -13,11 +14,13 @@ import {
   pick,
   talkStats,
   transcriptMetrics,
+  type Arena,
   type Draft,
   type Extras,
   type Metrics,
   type MistakeKey,
   type Mode,
+  type RoundFacts,
   type Scores,
   type TalkStats,
 } from '@/lib/interview-logic';
@@ -42,9 +45,6 @@ export type InterviewRecord = {
 
 /** What the member adds after the round. */
 export type PostMortem = { scores: Scores | null; mistakes: MistakeKey[] | null; nextTime: string | null };
-
-/** The short form the dashboard lists. */
-export type InterviewSummary = Omit<InterviewRecord, 'draft'>;
 
 export class InterviewError extends Error {
   constructor(public code: 'bad_problem' | 'interview_limit' | 'not_found' | 'too_big' | 'bad_request') {
@@ -250,26 +250,29 @@ export async function finishInterview(session: Session, id: number, raw: unknown
   return getInterview(session, id);
 }
 
-/** Finished sessions, newest first, for the dashboard card. */
-export async function listInterviews(session: Session, limit = 20): Promise<InterviewSummary[]> {
+/** Everything the dashboard's Arena shows, derived from the member's finished rounds. */
+export async function arenaFor(session: Session): Promise<Arena> {
   const sql = db();
   const rows = (await sql`
-    select id, slug, mode, started_at, finished_at, scores, talk_stats, ac_after_start, metrics, mistakes, next_time
+    select id, slug, mode, finished_at, ac_after_start, scores, talk_stats, mistakes,
+           coalesce(extras->>'pattern', '') as pattern
     from interview_sessions
     where member_id = ${session.member.id} and finished_at is not null
-    order by started_at desc limit ${limit}
-  `) as Row[];
-  return rows.map((r) => ({
+    order by finished_at desc limit 400
+  `) as (Pick<Row, 'id' | 'slug' | 'mode' | 'ac_after_start' | 'scores' | 'talk_stats' | 'mistakes'> & {
+    finished_at: Date | string;
+    pattern: string;
+  })[];
+  const facts: RoundFacts[] = rows.map((r) => ({
     id: Number(r.id),
     slug: r.slug,
-    startedAt: iso(r.started_at),
-    finishedAt: r.finished_at ? iso(r.finished_at) : null,
+    mode: r.mode,
+    finishedAt: iso(r.finished_at),
+    acAfterStart: r.ac_after_start,
     scores: r.scores,
     talkStats: r.talk_stats,
-    acAfterStart: r.ac_after_start,
-    mode: r.mode,
-    metrics: r.metrics,
     mistakes: r.mistakes ?? [],
-    nextTime: r.next_time,
+    pattern: r.pattern,
   }));
+  return arenaSummary(facts, Date.now());
 }

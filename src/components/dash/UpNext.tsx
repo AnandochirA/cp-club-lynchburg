@@ -18,6 +18,7 @@ export function UpNext({
   rankName,
   left,
   divineReady,
+  redo,
   onHover,
 }: {
   items: Problem[];
@@ -25,6 +26,8 @@ export function UpNext({
   left: number;
   /** All 30 Hards are done but the rank still needs an officer. */
   divineReady: boolean;
+  /** Slugs due in the redo queue; they lead the list with a ribbon. */
+  redo?: ReadonlySet<string>;
   onHover: (slug: string | null) => void;
 }) {
   return (
@@ -62,11 +65,17 @@ export function UpNext({
                 rel="noopener noreferrer"
                 className="tk"
                 data-spot
+                data-redo={redo?.has(p.slug) ? '1' : undefined}
                 onPointerEnter={(e) => e.pointerType === 'mouse' && onHover(p.slug)}
                 onPointerLeave={() => onHover(null)}
                 onFocus={() => onHover(p.slug)}
                 onBlur={() => onHover(null)}
               >
+                {redo?.has(p.slug) && (
+                  <span className="tk-ribbon" aria-hidden="true">
+                    {IV.redoRibbon}
+                  </span>
+                )}
                 <span className="tk-num font-display" aria-hidden="true">
                   {n + 1}
                 </span>
@@ -86,14 +95,14 @@ export function UpNext({
               </a>
               {!IS_PREVIEW && (
                 <Link
-                  href={`/interview/${p.slug}`}
+                  href={`/interview/${p.slug}${redo?.has(p.slug) ? '?mode=redo' : ''}`}
                   className="font-mono mt-2 flex min-h-10 items-center gap-2 px-1 text-[12.5px] text-white/60 no-underline hover:text-text"
                 >
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <rect x="9" y="3" width="6" height="11" rx="3" />
                     <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
                   </svg>
-                  {IV.practice}
+                  {redo?.has(p.slug) ? IV.redoPractice : IV.practice}
                   <Icon name="arrow" size={13} stroke={2.2} />
                 </Link>
               )}

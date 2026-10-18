@@ -1,19 +1,19 @@
 import { NextResponse } from 'next/server';
-import { InterviewError, listInterviews, pickBlind, startExtras, startInterview } from '@/lib/interview';
+import { InterviewError, arenaFor, pickBlind, startExtras, startInterview } from '@/lib/interview';
 import { guardPost, readJson, str } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** GET: my finished mock interviews, newest first (for the dashboard card). */
+/** GET: the dashboard's Arena: readiness, the redo queue, weak spots, recent rounds. */
 export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
   try {
-    return NextResponse.json({ sessions: await listInterviews(session) });
+    return NextResponse.json({ arena: await arenaFor(session) });
   } catch (err) {
-    console.error('interview list failed', err);
+    console.error('arena failed', err);
     return NextResponse.json({ error: 'server' }, { status: 500 });
   }
 }

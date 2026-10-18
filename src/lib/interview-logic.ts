@@ -4,7 +4,7 @@
  * talk stats. The server never trusts a draft as sent; it runs cleanDraft.
  */
 import { RANK_KEYS, curriculum, type Problem } from './curriculum';
-import { STAGE_IDS, type ScoreKey, type StageId } from './interview-kit';
+import { STAGE_IDS, patternMatches, type ScoreKey, type StageId } from './interview-kit';
 
 export const MAX_NOTES = 2000;
 export const MAX_LINE = 400;
@@ -302,3 +302,148 @@ export function clock(ms: number) {
 }
 
 export const pick = <T,>(xs: T[]): T => xs[Math.floor(Math.random() * xs.length)];
+
+// ================================================================ the arena
+// Everything the dashboard's Arena shows is derived here from the finished
+// rounds, the same way ladder progress is derived from ac_events: no extra
+// tables, so the numbers can always be recomputed and explained.
+
+/** One finished round, as much as the Arena needs. */
+export type RoundFacts = {
+  id: number;
+  slug: string;
+  mode: Mode;
+  finishedAt: string;
+  acAfterStart: boolean;
+  scores: Scores | null;
+  talkStats: TalkStats | null;
+  mistakes: MistakeKey[];
+  /** The blind pattern call, if any. */
+  pattern: string;
+};
+
+const DAY = 24 * 60 * 60_000;
+/** Days until a failed problem comes back, then each pass pushes it further out. Pass the last one: mastered. */
+export const REDO_DAYS = [1, 3, 7, 21];
+export const MAX_ROUND_MS = 50 * 60_000;
+
+/**
+ * A round you should redo: no Accepted, any self-score of 2 or lower, more
+ * than 50 minutes, or you tagged yourself as freezing or picking the wrong pattern.
+ */
+export function failedRound(r: RoundFacts): boolean {
+  if (!r.acAfterStart) return true;
+  if (scored(r.scores) && SCORE_KEYS.some((k) => r.scores![k] <= 2)) return true;
+  if ((r.talkStats?.totalMs ?? 0) > MAX_ROUND_MS) return true;
+  return r.mistakes.includes('froze') || r.mistakes.includes('wrong_pattern');
+}
+
+export type RedoItem = { slug: string; dueAt: string; /** 0..3: which interval it is on */ box: number; overdue: boolean };
+export type RedoQueue = { due: RedoItem[]; upcoming: RedoItem[]; mastered: number };
+
+export function redoQueue(rounds: RoundFacts[], now: number): RedoQueue {
+  const state = new Map<string, { box: number; due: number } | 'mastered'>();
+  for (const r of [...rounds].sort((a, b) => a.finishedAt.localeCompare(b.finishedAt))) {
+    const at = new Date(r.finishedAt).getTime();
+    const cur = state.get(r.slug);
+    if (failedRound(r)) {
+      state.set(r.slug, { box: 0, due: at + REDO_DAYS[0] * DAY });
+    } else if (cur && cur !== 'mastered') {
+      const box = cur.box + 1;
+      state.set(r.slug, box >= REDO_DAYS.length ? 'mastered' : { box, due: at + REDO_DAYS[box] * DAY });
+    }
+  }
+  const due: RedoItem[] = [];
+  const upcoming: RedoItem[] = [];
+  let mastered = 0;
+  for (const [slug, s] of state) {
+    if (s === 'mastered') {
+      mastered++;
+      continue;
+    }
+    const item = { slug, dueAt: new Date(s.due).toISOString(), box: s.box, overdue: now - s.due > DAY };
+    (s.due <= now ? due : upcoming).push(item);
+  }
+  due.sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  upcoming.sort((a, b) => a.dueAt.localeCompare(b.dueAt));
+  return { due, upcoming, mastered };
+}
+
+export type ReadinessPart = { key: 'volume' | 'score' | 'talk' | 'pattern' | 'backlog'; label: string; points: number; max: number };
+export type Readiness = { score: number; parts: ReadinessPart[] };
+
+const lastN = <T,>(xs: T[], n: number) => xs.slice(-n);
+
+/**
+ * Interview readiness, 0-100, out of five parts that are shown as they are:
+ * recent volume, self-scores, talking, blind pattern calls, and the redo
+ * backlog (which counts against you).
+ */
+export function readiness(rounds: RoundFacts[], now: number): Readiness {
+  const done = [...rounds].filter((r) => new Date(r.finishedAt).getTime() <= now).sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
+  const recent = done.filter((r) => now - new Date(r.finishedAt).getTime() <= 14 * DAY).length;
+  const scoredRounds = lastN(done.filter((r) => scored(r.scores)), 10);
+  const avg = scoredRounds.length ? scoredRounds.reduce((n, r) => n + avgScore(r.scores!), 0) / scoredRounds.length : 0;
+  const mic = lastN(done.filter((r) => r.talkStats?.mic), 10);
+  const talk = mic.length ? mic.reduce((n, r) => n + r.talkStats!.talkRatio, 0) / mic.length : 0;
+  const blind = lastN(done.filter((r) => r.mode === 'blind'), 10);
+  const acc = blind.length ? blind.filter((r) => callMatches(r)).length / blind.length : 0;
+  const backlog = redoQueue(done, now).due.length;
+  const parts: ReadinessPart[] = [
+    { key: 'volume', label: 'Rounds, last 14 days', points: (Math.min(recent, 10) / 10) * 25, max: 25 },
+    { key: 'score', label: 'Self-scores', points: avg ? ((avg - 1) / 3) * 30 : 0, max: 30 },
+    { key: 'talk', label: 'Talking', points: Math.min(talk / 0.6, 1) * 15, max: 15 },
+    { key: 'pattern', label: 'Blind pattern calls', points: acc * 15, max: 15 },
+    { key: 'backlog', label: 'Redos cleared', points: done.length ? Math.max(0, 1 - backlog / 4) * 15 : 0, max: 15 },
+  ].map((p) => ({ ...p, points: Math.round(p.points) })) as ReadinessPart[];
+  return { score: parts.reduce((n, p) => n + p.points, 0), parts };
+}
+
+function callMatches(r: RoundFacts): boolean {
+  const p = findProblem(r.slug);
+  return !!p && patternMatches(r.pattern, p.topic);
+}
+
+export type Arena = {
+  total: number;
+  recent: (RoundFacts & { verdict: Verdict | null })[];
+  readiness: Readiness;
+  /** Change against the same calculation a week ago; null with no history that old. */
+  delta: number | null;
+  redo: RedoQueue;
+  /** Most frequent first, over the last 20 rounds. */
+  mistakes: { key: MistakeKey; count: number }[];
+  pattern: { calls: number; hits: number };
+  averages: Scores | null;
+  /** Passed rounds in a row, newest first. */
+  streak: number;
+};
+
+export function arenaSummary(rounds: RoundFacts[], now: number): Arena {
+  const sorted = [...rounds].sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
+  const weekAgo = now - 7 * DAY;
+  const older = sorted.filter((r) => new Date(r.finishedAt).getTime() <= weekAgo);
+  const counts = new Map<MistakeKey, number>();
+  for (const r of sorted.slice(0, 20)) for (const m of r.mistakes) counts.set(m, (counts.get(m) ?? 0) + 1);
+  const blind = sorted.filter((r) => r.mode === 'blind');
+  const sc = sorted.filter((r) => scored(r.scores)).slice(0, 10);
+  let streak = 0;
+  for (const r of sorted) {
+    if (failedRound(r)) break;
+    streak++;
+  }
+  const now_ = readiness(sorted, now);
+  return {
+    total: sorted.length,
+    recent: sorted.slice(0, 6).map((r) => ({ ...r, verdict: verdictOf(r.scores) })),
+    readiness: now_,
+    delta: older.length ? now_.score - readiness(older, weekAgo).score : null,
+    redo: redoQueue(sorted, now),
+    mistakes: [...counts].map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count),
+    pattern: { calls: blind.length, hits: blind.filter(callMatches).length },
+    averages: sc.length
+      ? (Object.fromEntries(SCORE_KEYS.map((k) => [k, sc.reduce((n, r) => n + r.scores![k], 0) / sc.length])) as Scores)
+      : null,
+    streak,
+  };
+}
