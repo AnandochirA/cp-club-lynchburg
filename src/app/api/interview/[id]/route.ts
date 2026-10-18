@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { InterviewError, finishInterview, getInterview, saveInterview } from '@/lib/interview';
-import { MAX_BODY_BYTES, cleanScores } from '@/lib/interview-logic';
+import { MAX_BODY_BYTES, cleanMistakes, cleanScores } from '@/lib/interview-logic';
 import { guardPost } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
@@ -38,7 +38,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
 
 /**
  * POST { action: 'save', draft }              autosave while it runs
- * POST { action: 'finish', draft?, scores? }  close it out, or update scores and re-check the AC
+ * POST { action: 'finish', draft?, scores?, mistakes?, nextTime? }
+ *   close it out, or add the post-mortem and re-check the AC
  */
 export async function POST(req: Request, ctx: { params: Promise<{ id: string }> }) {
   const refused = guardPost(req);
@@ -66,8 +67,12 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
       return NextResponse.json({ ok: true });
     }
     if (body.action === 'finish') {
-      const scores = body.scores === undefined ? null : cleanScores(body.scores);
-      return NextResponse.json({ interview: await finishInterview(session, id, body.draft, scores) });
+      const pm = {
+        scores: body.scores === undefined ? null : cleanScores(body.scores),
+        mistakes: body.mistakes === undefined ? null : cleanMistakes(body.mistakes),
+        nextTime: typeof body.nextTime === 'string' ? body.nextTime : null,
+      };
+      return NextResponse.json({ interview: await finishInterview(session, id, body.draft, pm) });
     }
     return NextResponse.json({ error: 'bad_request' }, { status: 400 });
   } catch (err) {

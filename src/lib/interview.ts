@@ -2,12 +2,18 @@ import 'server-only';
 import { db } from '@/lib/db';
 import {
   RESUME_HOURS,
+  MAX_NEXT_TIME,
   STARTS_PER_DAY,
   cleanDraft,
   emptyDraft,
   findProblem,
   talkStats,
+  transcriptMetrics,
   type Draft,
+  type Extras,
+  type Metrics,
+  type MistakeKey,
+  type Mode,
   type Scores,
   type TalkStats,
 } from '@/lib/interview-logic';
@@ -17,13 +23,20 @@ import type { Session } from '@/lib/session';
 export type InterviewRecord = {
   id: number;
   slug: string;
+  mode: Mode;
   startedAt: string;
   finishedAt: string | null;
   draft: Draft;
   scores: Scores | null;
   talkStats: TalkStats | null;
   acAfterStart: boolean;
+  metrics: Metrics | null;
+  mistakes: MistakeKey[];
+  nextTime: string | null;
 };
+
+/** What the member adds after the round. */
+export type PostMortem = { scores: Scores | null; mistakes: MistakeKey[] | null; nextTime: string | null };
 
 /** The short form the dashboard lists. */
 export type InterviewSummary = Omit<InterviewRecord, 'draft'>;
@@ -37,6 +50,7 @@ export class InterviewError extends Error {
 type Row = {
   id: number | string;
   slug: string;
+  mode: Mode;
   started_at: Date | string;
   finished_at: Date | string | null;
   stage: string;
@@ -46,22 +60,31 @@ type Row = {
   scores: Scores | null;
   talk_stats: TalkStats | null;
   ac_after_start: boolean;
+  metrics: Metrics | null;
+  mistakes: MistakeKey[] | null;
+  next_time: string | null;
+  extras: Extras | null;
 };
 
 const iso = (v: Date | string) => new Date(v).toISOString();
 
 function toRecord(r: Row): InterviewRecord {
   // Rows are only ever written through cleanDraft, so this re-check is cheap insurance, not validation.
-  const draft = cleanDraft({ stage: r.stage, stages: r.stages, transcript: r.transcript, mic: r.mic }) ?? emptyDraft();
+  const draft =
+    cleanDraft({ stage: r.stage, stages: r.stages, transcript: r.transcript, mic: r.mic, extras: r.extras }) ?? emptyDraft();
   return {
     id: Number(r.id),
     slug: r.slug,
+    mode: r.mode ?? 'practice',
     startedAt: iso(r.started_at),
     finishedAt: r.finished_at ? iso(r.finished_at) : null,
     draft,
     scores: r.scores,
     talkStats: r.talk_stats,
     acAfterStart: r.ac_after_start,
+    metrics: r.metrics ?? null,
+    mistakes: r.mistakes ?? [],
+    nextTime: r.next_time ?? null,
   };
 }
 
@@ -77,7 +100,8 @@ export async function findResumable(session: Session, slug: string): Promise<Int
   return rows[0] ? toRecord(rows[0]) : null;
 }
 
-export async function startInterview(session: Session, slug: string): Promise<InterviewRecord> {
+/** Start a round. `extras` carries the curveball (and nothing else at the start). */
+export async function startInterview(session: Session, slug: string, mode: Mode, extras: Extras): Promise<InterviewRecord> {
   if (!findProblem(slug)) throw new InterviewError('bad_problem');
   const sql = db();
   const [{ n }] = (await sql`
@@ -87,11 +111,23 @@ export async function startInterview(session: Session, slug: string): Promise<In
   if (n >= STARTS_PER_DAY) throw new InterviewError('interview_limit');
   const d = emptyDraft();
   const rows = (await sql`
-    insert into interview_sessions (member_id, slug, stage, stages, transcript)
-    values (${session.member.id}, ${slug}, ${d.stage}, ${JSON.stringify(d.stages)}::jsonb, ${JSON.stringify(d.transcript)}::jsonb)
+    insert into interview_sessions (member_id, slug, mode, stage, stages, transcript, extras)
+    values (${session.member.id}, ${slug}, ${mode}, ${d.stage}, ${JSON.stringify(d.stages)}::jsonb,
+            ${JSON.stringify(d.transcript)}::jsonb, ${JSON.stringify(extras)}::jsonb)
     returning *
   `) as Row[];
   return toRecord(rows[0]);
+}
+
+/** The "next time I will…" line from the member's latest round that has one. */
+export async function lastNextTime(session: Session): Promise<string | null> {
+  const sql = db();
+  const rows = (await sql`
+    select next_time from interview_sessions
+    where member_id = ${session.member.id} and finished_at is not null and coalesce(next_time, '') <> ''
+    order by finished_at desc limit 1
+  `) as { next_time: string }[];
+  return rows[0]?.next_time ?? null;
 }
 
 export async function getInterview(session: Session, id: number): Promise<InterviewRecord> {
@@ -111,7 +147,8 @@ export async function saveInterview(session: Session, id: number, raw: unknown):
   const rows = (await sql`
     update interview_sessions
     set stage = ${d.stage}, stages = ${JSON.stringify(d.stages)}::jsonb,
-        transcript = ${JSON.stringify(d.transcript)}::jsonb, mic = ${d.mic}, updated_at = now()
+        transcript = ${JSON.stringify(d.transcript)}::jsonb, mic = ${d.mic},
+        extras = ${JSON.stringify(d.extras)}::jsonb, updated_at = now()
     where id = ${id} and member_id = ${session.member.id} and finished_at is null
     returning id
   `) as { id: number }[];
@@ -129,20 +166,18 @@ async function acSince(memberId: number, slug: string, startedAt: string): Promi
 }
 
 /**
- * Close a session out: freeze the draft, compute talk stats here (not trusted
- * from the client), and look for an Accepted since it started. Calling it on
- * an already finished session only updates the scores and the AC check, so
- * "Save scores" and "Check again" can reuse it.
+ * Close a session out: freeze the draft, compute talk stats and transcript
+ * metrics here (never trusted from the client), and look for an Accepted
+ * since it started. Calling it on an already finished session only updates
+ * the post-mortem and the AC check, so "Lock in verdict" and "Check again"
+ * reuse it. A null field in `pm` leaves that field as it was.
  */
-export async function finishInterview(
-  session: Session,
-  id: number,
-  raw: unknown,
-  scores: Scores | null,
-): Promise<InterviewRecord> {
+export async function finishInterview(session: Session, id: number, raw: unknown, pm: PostMortem): Promise<InterviewRecord> {
   const current = await getInterview(session, id);
   const sql = db();
   const ac = await acSince(session.member.id, current.slug, current.startedAt);
+  const scores = pm.scores ? JSON.stringify(pm.scores) : null;
+  const nextTime = pm.nextTime === null ? null : pm.nextTime.trim().slice(0, MAX_NEXT_TIME);
   if (!current.finishedAt) {
     const d = cleanDraft(raw) ?? current.draft;
     d.stage = 'review';
@@ -150,19 +185,22 @@ export async function finishInterview(
       update interview_sessions
       set stage = 'review', stages = ${JSON.stringify(d.stages)}::jsonb,
           transcript = ${JSON.stringify(d.transcript)}::jsonb, mic = ${d.mic},
+          extras = ${JSON.stringify(d.extras)}::jsonb,
           talk_stats = ${JSON.stringify(talkStats(d))}::jsonb,
-          scores = ${scores ? JSON.stringify(scores) : null}::jsonb,
+          metrics = ${JSON.stringify(transcriptMetrics(d))}::jsonb,
+          scores = ${scores}::jsonb,
           ac_after_start = ${ac}, finished_at = now(), updated_at = now()
       where id = ${id} and member_id = ${session.member.id}
     `;
-  } else {
-    await sql`
-      update interview_sessions
-      set scores = coalesce(${scores ? JSON.stringify(scores) : null}::jsonb, scores),
-          ac_after_start = ${ac}, updated_at = now()
-      where id = ${id} and member_id = ${session.member.id}
-    `;
   }
+  await sql`
+    update interview_sessions
+    set scores = coalesce(${scores}::jsonb, scores),
+        mistakes = coalesce(${pm.mistakes}::text[], mistakes),
+        next_time = coalesce(${nextTime}, next_time),
+        ac_after_start = ${ac}, updated_at = now()
+    where id = ${id} and member_id = ${session.member.id}
+  `;
   return getInterview(session, id);
 }
 
@@ -170,7 +208,7 @@ export async function finishInterview(
 export async function listInterviews(session: Session, limit = 20): Promise<InterviewSummary[]> {
   const sql = db();
   const rows = (await sql`
-    select id, slug, started_at, finished_at, scores, talk_stats, ac_after_start
+    select id, slug, mode, started_at, finished_at, scores, talk_stats, ac_after_start, metrics, mistakes, next_time
     from interview_sessions
     where member_id = ${session.member.id} and finished_at is not null
     order by started_at desc limit ${limit}
@@ -183,5 +221,9 @@ export async function listInterviews(session: Session, limit = 20): Promise<Inte
     scores: r.scores,
     talkStats: r.talk_stats,
     acAfterStart: r.ac_after_start,
+    mode: r.mode,
+    metrics: r.metrics,
+    mistakes: r.mistakes ?? [],
+    nextTime: r.next_time,
   }));
 }

@@ -186,3 +186,13 @@ create table if not exists interview_sessions (
   ac_after_start  boolean     not null default false
 );
 create index if not exists interview_sessions_member_idx on interview_sessions (member_id, started_at desc);
+-- Round two of interview mode. `mode`: practice | blind (drawn for you, topic
+-- hidden) | redo (a spaced-repetition retry). `metrics` are read off the
+-- transcript at finish; `mistakes` and `next_time` are the member's own
+-- post-mortem. `extras` holds the blind pattern call and the curveball.
+alter table interview_sessions add column if not exists mode text not null default 'practice'
+  check (mode in ('practice', 'blind', 'redo'));
+alter table interview_sessions add column if not exists metrics jsonb;
+alter table interview_sessions add column if not exists mistakes text[] not null default '{}';
+alter table interview_sessions add column if not exists next_time text;
+alter table interview_sessions add column if not exists extras jsonb not null default '{}'::jsonb;

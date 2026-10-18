@@ -456,3 +456,208 @@
     transition: none;
   }
 }
+
+/* ======================================================= round two: verdicts */
+
+/* The rubber stamp. Double rule, slight tilt, slams down when it lands. */
+.iv-stamp {
+  --vc: var(--verdict-ac);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  align-self: flex-start;
+  padding: 14px 26px 12px;
+  color: var(--vc);
+  border: 3px solid currentColor;
+  outline: 1.5px solid currentColor;
+  outline-offset: 4px;
+  rotate: -4deg;
+  background: color-mix(in srgb, var(--vc) 7%, transparent);
+}
+@media (min-width: 1024px) {
+  .iv-stamp {
+    align-self: center;
+  }
+}
+.iv-stamp[data-v='tle'] {
+  --vc: var(--verdict-tle);
+}
+.iv-stamp[data-v='wa'] {
+  --vc: var(--verdict-wa);
+}
+.iv-stamp[data-pending] {
+  color: rgba(255, 255, 255, 0.42);
+  border-style: dashed;
+  outline: none;
+  rotate: 0deg;
+  background: none;
+}
+.iv-stamp-word {
+  font-size: clamp(40px, 9vw, 76px);
+  font-weight: 900;
+  line-height: 0.86;
+  white-space: nowrap;
+}
+.iv-stamp[data-pending] .iv-stamp-word {
+  font-size: clamp(28px, 6vw, 40px);
+}
+.iv-stamp-meta {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.iv-stamp[data-pending] .iv-stamp-meta {
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: 12px;
+}
+.iv-stamp[data-slam] {
+  animation: iv-slam 0.62s cubic-bezier(0.2, 0.9, 0.25, 1.15) 0.35s both;
+}
+@keyframes iv-slam {
+  0% {
+    opacity: 0;
+    scale: 2.6;
+    rotate: -14deg;
+    filter: blur(6px);
+  }
+  62% {
+    opacity: 1;
+    scale: 0.93;
+    rotate: -3deg;
+    filter: blur(0);
+  }
+  100% {
+    scale: 1;
+    rotate: -4deg;
+  }
+}
+/* the panel takes the hit as the stamp lands */
+.iv-hero[data-hit] {
+  animation: iv-hit 0.42s ease-out 0.72s both;
+}
+@keyframes iv-hit {
+  20% {
+    translate: 0 5px;
+  }
+  45% {
+    translate: -3px -2px;
+  }
+  70% {
+    translate: 2px 1px;
+  }
+}
+
+/* ---------------------------------------------------------------- signals */
+.iv-signals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+}
+.iv-signal {
+  --g: #52d68a;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 13px;
+  background: color-mix(in srgb, var(--g) 6%, #101116);
+  border: 1px solid color-mix(in srgb, var(--g) 30%, transparent);
+  border-top: 3px solid var(--g);
+  animation: iv-rise 0.7s var(--ease-out-expo) backwards;
+  animation-delay: calc(var(--n) * 90ms + 150ms);
+}
+.iv-signal[data-grade='ok'] {
+  --g: var(--color-gold);
+}
+.iv-signal[data-grade='bad'] {
+  --g: #ff5c77;
+}
+@keyframes iv-rise {
+  from {
+    opacity: 0;
+    translate: 0 14px;
+  }
+}
+.iv-signal-label {
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.iv-signal-value {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 0.95;
+  color: var(--g);
+}
+.iv-signal-target {
+  font-size: 11.5px;
+  color: var(--color-muted);
+}
+
+/* ------------------------------------------------------- chips and inputs */
+.iv-chip {
+  position: relative;
+  cursor: pointer;
+}
+.iv-chip input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.iv-chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 38px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: var(--color-muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+.iv-chip:hover span {
+  color: var(--color-text);
+}
+.iv-chip input:checked + span {
+  color: #ffd1d9;
+  border-color: rgba(255, 92, 119, 0.6);
+  background: rgba(255, 92, 119, 0.12);
+}
+.iv-chip input:focus-visible + span {
+  outline: 2px solid var(--tier);
+  outline-offset: 2px;
+}
+.iv-input {
+  width: 100%;
+  height: 48px;
+  padding: 0 16px;
+  font: 15px var(--font-sans);
+  color: var(--color-text);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0;
+}
+.iv-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+.iv-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--tier) 70%, transparent);
+}
+
+/* the last two minutes of a step */
+.iv-clock[data-pressure] {
+  animation: iv-pressure 1s ease-in-out infinite;
+}
+@keyframes iv-pressure {
+  50% {
+    color: var(--color-crimson-hi);
+    text-shadow: 0 0 22px rgba(255, 92, 119, 0.55);
+  }
+}

@@ -144,13 +144,13 @@ export function useSpeech({
     [begin],
   );
 
-  /** Speak a coach line. Resolves when it has been said (or at once if the voice is off or unsupported). */
+  /** Queue a coach line. Resolves when it has been said (or at once if the voice is off or unsupported). */
   const say = useCallback(
     (text: string, rate = 1) =>
       new Promise<void>((resolve) => {
         if (!voiceOn || !('speechSynthesis' in window)) return resolve();
+        // No cancel(): lines queue up, so "last time you said…" is not cut off by the step's prompt.
         const synth = window.speechSynthesis;
-        synth.cancel();
         const u = new SpeechSynthesisUtterance(text);
         const v = pickVoice();
         if (v) u.voice = v;

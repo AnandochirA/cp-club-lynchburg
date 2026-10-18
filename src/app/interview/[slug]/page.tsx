@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { InterviewRoom } from '@/components/interview/InterviewRoom';
-import { findResumable } from '@/lib/interview';
+import { findResumable, lastNextTime } from '@/lib/interview';
 import { interviewCopy as C } from '@/lib/interview-kit';
 import { findProblem } from '@/lib/interview-logic';
 import { getSession } from '@/lib/session';
@@ -21,10 +21,10 @@ export default async function InterviewPage({ params }: { params: Promise<{ slug
   const session = await getSession();
   if (!session) redirect('/signin');
 
-  const resume = await findResumable(session, problem.slug);
+  const [resume, nextTime] = await Promise.all([findResumable(session, problem.slug), lastNextTime(session)]);
   return (
     <main>
-      <InterviewRoom key={resume?.id ?? 'new'} problem={problem} resume={resume} />
+      <InterviewRoom key={resume?.id ?? 'new'} problem={problem} resume={resume} lastNextTime={nextTime} />
     </main>
   );
 }

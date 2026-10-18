@@ -44,6 +44,8 @@ export function StagePanel({
 }) {
   const budget = stage.minutes * 60_000;
   const over = elapsedMs > budget;
+  // The last two minutes of a step: the clock starts to pulse.
+  const pressure = !over && budget - elapsedMs <= 120_000;
   const pct = Math.min(100, (elapsedMs / budget) * 100);
   const showLeetCode = stage.id === 'read' || stage.id === 'code';
 
@@ -61,7 +63,8 @@ export function StagePanel({
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <span
-            className={`font-display text-[44px] leading-[0.8] font-black tabular-nums ${over ? 'text-gold' : 'text-text'}`}
+            className={`iv-clock font-display text-[44px] leading-[0.8] font-black tabular-nums ${over ? 'text-gold' : 'text-text'}`}
+            data-pressure={pressure ? '1' : undefined}
             aria-live="off"
           >
             {clock(elapsedMs)}

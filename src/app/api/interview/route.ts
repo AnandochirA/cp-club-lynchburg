@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { InterviewError, listInterviews, startInterview } from '@/lib/interview';
+import { emptyExtras } from '@/lib/interview-logic';
 import { guardPost, readJson, str } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
@@ -18,7 +19,7 @@ export async function GET() {
   }
 }
 
-/** POST { slug }: start a mock interview on a ladder problem. */
+/** POST { slug, mode? }: start a mock interview on a ladder problem. */
 export async function POST(req: Request) {
   const refused = guardPost(req);
   if (refused) return refused;
@@ -26,7 +27,8 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
   const body = await readJson(req);
   try {
-    const interview = await startInterview(session, str(body?.slug, 120));
+    const mode = body?.mode === 'redo' ? 'redo' : 'practice';
+    const interview = await startInterview(session, str(body?.slug, 120), mode, emptyExtras());
     return NextResponse.json({ interview });
   } catch (err) {
     if (err instanceof InterviewError) {

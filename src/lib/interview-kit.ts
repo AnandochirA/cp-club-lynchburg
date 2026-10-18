@@ -342,6 +342,30 @@ export const RUBRIC: { key: ScoreKey; title: string; low: string; high: string }
 
 export const SCORE_LABELS = ['', 'No hire', 'Lean no', 'Lean hire', 'Strong hire'];
 
+/** Verdict stamps. `v` picks the site's judge colours (motion.css): ac green, tle amber, wa red. */
+export const VERDICTS: Record<'strong' | 'lean_hire' | 'lean_no' | 'no_hire', { label: string; v: 'ac' | 'tle' | 'wa' }> = {
+  strong: { label: 'Strong hire', v: 'ac' },
+  lean_hire: { label: 'Lean hire', v: 'ac' },
+  lean_no: { label: 'Lean no', v: 'tle' },
+  no_hire: { label: 'No hire', v: 'wa' },
+};
+
+export const MISTAKES: Record<
+  'wrong_pattern' | 'misread' | 'missed_edge' | 'off_by_one' | 'bug' | 'out_of_time' | 'no_optimize' | 'froze',
+  string
+> = {
+  wrong_pattern: 'Wrong pattern',
+  misread: 'Misread the problem',
+  missed_edge: 'Missed an edge case',
+  off_by_one: 'Off-by-one',
+  bug: 'Bug in the code',
+  out_of_time: 'Ran out of time',
+  no_optimize: "Couldn't optimize",
+  froze: 'Froze / went quiet',
+};
+
+export const lastTimeLine = (s: string) => `Before we start. Last time you told yourself: "${s}". Let's see it today.`;
+
 // ------------------------------------------------------------------- UI copy
 
 export const interviewCopy = {
@@ -398,8 +422,18 @@ export const interviewCopy = {
     acNo: 'No accepted submission seen since you started. Submit on LeetCode, then check again.',
     acCheck: 'Check again',
     acChecking: 'Checking…',
-    save: 'Save scores',
-    savedScores: 'Scores saved.',
+    save: 'Lock in verdict',
+    savedScores: 'Verdict locked in.',
+    pending: 'Verdict pending',
+    pendingNote: 'Score yourself below to get your verdict.',
+    signals: 'Signals from your transcript',
+    signalsNote: 'Measured from what you said, not from your self-score.',
+    broke: 'What broke?',
+    brokeNote: 'Tag everything that cost you. These add up into your weak spots on the dashboard.',
+    nextTime: 'Next time I will…',
+    nextTimePlaceholder: 'dry-run one edge case before I hit submit',
+    nextTimeNote: 'The coach reads this back at the start of your next round.',
+    target: 'target',
     again: 'Do another',
     yourNotes: 'Your notes',
   },

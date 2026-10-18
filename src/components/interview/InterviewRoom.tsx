@@ -7,7 +7,7 @@ import '../../app/interview.css';
 import { apiErrors, rankSection } from '@/lib/content';
 import { apiPost } from '@/lib/client-api';
 import type { Problem } from '@/lib/curriculum';
-import type { InterviewRecord } from '@/lib/interview';
+import type { InterviewRecord, PostMortem } from '@/lib/interview';
 import {
   CLOSING,
   NUDGES,
@@ -17,6 +17,7 @@ import {
   checklistFor,
   followUpsFor,
   interviewCopy as C,
+  lastTimeLine,
   stageById,
   type StageId,
 } from '@/lib/interview-kit';
@@ -33,7 +34,6 @@ import {
   transcriptChars,
   type Draft,
   type Line,
-  type Scores,
 } from '@/lib/interview-logic';
 import { Icon } from '../icons';
 import { ReviewPanel } from './ReviewPanel';
@@ -57,7 +57,16 @@ type Live = { enteredAt: number; talkMs: number; longestSilenceMs: number; nudge
  * and autosave, and every change goes through `update` so the ref used by
  * timers and the state used for rendering never drift apart.
  */
-export function InterviewRoom({ problem, resume }: { problem: Problem; resume: InterviewRecord | null }) {
+export function InterviewRoom({
+  problem,
+  resume,
+  lastNextTime,
+}: {
+  problem: Problem;
+  resume: InterviewRecord | null;
+  /** Your own "next time I will…" from the last round, read back at the start of this one. */
+  lastNextTime: string | null;
+}) {
   const [phase, setPhase] = useState<Phase>(resume?.finishedAt ? 'review' : 'intro');
   const [record, setRecord] = useState<InterviewRecord | null>(resume);
   const [draft, setDraft] = useState<Draft>(resume?.draft ?? emptyDraft());
@@ -225,6 +234,7 @@ export function InterviewRoom({ problem, resume }: { problem: Problem; resume: I
     setPhase('live');
     if (speech.stt) toggleMic(true);
     const at = rec.draft.stage === 'review' ? 'read' : rec.draft.stage;
+    if (rec !== resume && lastNextTime) coach(lastTimeLine(lastNextTime));
     enter(at, rec === resume ? 'resume' : 'jump');
   }
 
@@ -251,9 +261,9 @@ export function InterviewRoom({ problem, resume }: { problem: Problem; resume: I
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function saveScores(scores: Scores) {
+  async function lockIn(pm: PostMortem) {
     if (!record) return false;
-    const res = await apiPost<{ interview: InterviewRecord }>(`/api/interview/${record.id}`, { action: 'finish', scores });
+    const res = await apiPost<{ interview: InterviewRecord }>(`/api/interview/${record.id}`, { action: 'finish', ...pm });
     if (!res.ok) {
       setError(apiErrors[res.error] ?? apiErrors.server);
       return false;
@@ -510,7 +520,7 @@ export function InterviewRoom({ problem, resume }: { problem: Problem; resume: I
             <h1 className="sr-only">
               {C.review.title} {problem.title}
             </h1>
-            <ReviewPanel record={record} problem={problem} onSaveScores={saveScores} onRecheck={recheck} />
+            <ReviewPanel record={record} problem={problem} onLockIn={lockIn} onRecheck={recheck} />
           </>
         )}
       </div>
