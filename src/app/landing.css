@@ -537,15 +537,6 @@
   }
 }
 
-/* ----------------------------------------------------------- the ladder */
-.ld-rank {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  min-height: 48px;
-  border-bottom: 1px solid rgba(18, 19, 23, 0.1);
-}
-
 @media (prefers-reduced-motion: reduce) {
   .mr-rec,
   .mr-caret {
@@ -822,19 +813,6 @@ html.js .hw-steps.is-in .hw-dot {
     translate: 0 0;
     opacity: 1;
   }
-}
-
-/* ----------------------------------------------------------- the ladder */
-html.js .ld-rank .ld-hex {
-  scale: 0;
-  rotate: -120deg;
-  transition:
-    scale 0.7s var(--ease-spring) calc(var(--i, 0) * 90ms + 250ms),
-    rotate 0.7s var(--ease-spring) calc(var(--i, 0) * 90ms + 250ms);
-}
-html.js .ld-rank.is-in .ld-hex {
-  scale: 1;
-  rotate: 0deg;
 }
 
 @media (prefers-reduced-motion: reduce) {

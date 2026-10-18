@@ -274,7 +274,7 @@ export const how = {
 export const ladderSection = {
   eyebrow: 'the ladder',
   title: 'Every hexagon is a problem.',
-  lead: `${ladder.total} problems from Blind 75, NeetCode 150 and the big-tech favourites, ordered so each rank builds on the one before. Hover the grid to see them.`,
+  lead: `${ladder.total} problems from Blind 75, NeetCode 150 and the big-tech favourites, ordered so each rank builds on the one before. Scroll to climb them.`,
   stats: [
     { value: String(ladder.total), label: 'problems' },
     { value: '5', label: 'ranks' },
