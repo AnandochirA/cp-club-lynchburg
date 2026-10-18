@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { behavioralDoor } from '@/lib/behavioral';
 import { InterviewError, arenaFor, choosePersona, pickBlind, startExtras, startInterview } from '@/lib/interview';
-import { aiAllowed } from '@/lib/interviewer';
 import { guardPost, readJson, str } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
@@ -24,7 +23,7 @@ export async function GET() {
 /**
  * POST { slug, mode? }: start a mock interview on a ladder problem.
  * POST { mode: 'blind' }: the server draws the problem; any slug sent is ignored.
- * Both take { persona?: PersonaKey | 'mystery', ai?: boolean }.
+ * Both take { persona?: PersonaKey | 'mystery' }.
  */
 export async function POST(req: Request) {
   const refused = guardPost(req);
@@ -37,9 +36,7 @@ export async function POST(req: Request) {
     const slug = mode === 'blind' ? await pickBlind(session) : str(body?.slug, 120);
     const { persona, mystery } = choosePersona(body?.persona, mode);
     const extras = { ...startExtras(slug, mode), mystery };
-    // Asking for the AI only gets it when a key is configured and today's AI rounds are not used up.
-    const ai = body?.ai === true && (await aiAllowed(session));
-    const interview = await startInterview(session, slug, { mode, extras, persona, ai });
+    const interview = await startInterview(session, slug, { mode, extras, persona });
     return NextResponse.json({ interview });
   } catch (err) {
     if (err instanceof InterviewError) {

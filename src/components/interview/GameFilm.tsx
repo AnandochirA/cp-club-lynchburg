@@ -11,7 +11,6 @@ const KIND_COLOR: Record<MomentKind, string> = {
   idea: '#52d68a',
   complexity: '#7cc4ff',
   silence: '#ff5c77',
-  markedDown: '#ff5c77',
   nudge: '#f6c453',
   followup: '#c89bff',
   curveball: '#f6c453',
@@ -33,15 +32,13 @@ const STAGE_TINT = ['#2a2f3d', '#30293d', '#3d2f29', '#293d33', '#3d3a29', '#2f2
 export function GameFilm({
   draft,
   metrics,
-  markedDown,
   onSeek,
 }: {
   draft: Draft;
   metrics: Metrics | null;
-  markedDown?: { at: string; why: string } | null;
   onSeek: (line: number) => void;
 }) {
-  const f = useMemo(() => film(draft, metrics, markedDown), [draft, metrics, markedDown]);
+  const f = useMemo(() => film(draft, metrics), [draft, metrics]);
   const box = useRef<HTMLDivElement>(null);
   const [hover, setHover] = useState<{ x: number; at: number } | null>(null);
   const x = (ms: number) => (ms / f.total) * W;

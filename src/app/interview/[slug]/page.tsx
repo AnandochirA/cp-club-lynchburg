@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { notFound, redirect } from 'next/navigation';
 import { InterviewRoom } from '@/components/interview/InterviewRoom';
 import { findResumable, lastNextTime } from '@/lib/interview';
-import { aiAllowed } from '@/lib/interviewer';
 import { interviewCopy as C } from '@/lib/interview-kit';
 import { findProblem } from '@/lib/interview-logic';
 import { getSession } from '@/lib/session';
@@ -29,7 +28,7 @@ export default async function InterviewPage({
   const session = await getSession();
   if (!session) redirect('/signin');
 
-  const [resume, nextTime, ai] = await Promise.all([findResumable(session, problem.slug), lastNextTime(session), aiAllowed(session)]);
+  const [resume, nextTime] = await Promise.all([findResumable(session, problem.slug), lastNextTime(session)]);
   return (
     <main>
       <InterviewRoom
@@ -40,7 +39,6 @@ export default async function InterviewPage({
         // ?go=1: straight in from the blind draw. ?mode=redo: a retry from the redo queue.
         autostart={q.go === '1' && !!resume}
         startMode={q.mode === 'redo' ? 'redo' : 'practice'}
-        aiAvailable={ai}
       />
     </main>
   );

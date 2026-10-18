@@ -198,27 +198,16 @@ alter table interview_sessions add column if not exists next_time text;
 alter table interview_sessions add column if not exists extras jsonb not null default '{}'::jsonb;
 
 -- Round three. `persona`: who interviews you (see PERSONAS in
--- interview-kit.ts). `ai`: the round is run by the AI interviewer.
--- `ai_notes` are its private notes during the round (what it would write
--- down), `ai_debrief` its write-up at the end, `ai_usage` the tokens and
--- characters spent, for the cost estimate. None of these are sent to the
--- browser before the round is finished.
+-- interview-kit.ts).
 alter table interview_sessions add column if not exists persona text not null default 'coach'
   check (persona in ('coach', 'stone', 'interrupter', 'misleader', 'rusher'));
-alter table interview_sessions add column if not exists ai boolean not null default false;
-alter table interview_sessions add column if not exists ai_notes jsonb not null default '[]'::jsonb;
-alter table interview_sessions add column if not exists ai_debrief jsonb;
-alter table interview_sessions add column if not exists ai_usage jsonb not null default '{}'::jsonb;
 
--- The AI interviewer's private brief on a problem (the facts it answers
--- clarifying questions from, the optimal approach, common mistakes). The
--- same for everyone, so it is generated once per problem and kept.
-create table if not exists ai_briefs (
-  slug        text        primary key,
-  brief       jsonb       not null,
-  model       text        not null,
-  created_at  timestamptz not null default now()
-);
+-- The AI interviewer was removed; these drops clean up what it left behind.
+alter table interview_sessions drop column if exists ai;
+alter table interview_sessions drop column if exists ai_notes;
+alter table interview_sessions drop column if exists ai_debrief;
+alter table interview_sessions drop column if exists ai_usage;
+drop table if exists ai_briefs;
 
 -- Problem statements, fetched from LeetCode once and shared by everyone, so
 -- the interview steps can be done on this site. `html` is stored already

@@ -1281,7 +1281,7 @@ a.door:hover {
   position: relative;
 }
 
-/* ============================================= round three: personas, AI, film */
+/* ================================================ round three: personas, film */
 
 /* each persona has a colour; it tints its badge, card and reveal */
 [data-persona] {
@@ -1315,12 +1315,6 @@ a.door:hover {
   color: var(--pc);
   border: 1px solid color-mix(in srgb, var(--pc) 45%, transparent);
   background: color-mix(in srgb, var(--pc) 9%, transparent);
-}
-.iv-persona-badge b {
-  padding: 1px 5px;
-  font-size: 10px;
-  color: #0b0c10;
-  background: #c89bff;
 }
 
 /* the picker */
@@ -1385,57 +1379,7 @@ a.door:hover {
   color: var(--color-muted);
 }
 
-.iv-ai-toggle {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  max-width: 640px;
-  padding: 14px 16px;
-  cursor: pointer;
-  border: 1px solid rgba(200, 155, 255, 0.35);
-  background:
-    radial-gradient(90% 120% at 0% 0%, rgba(200, 155, 255, 0.14), transparent 60%),
-    rgba(255, 255, 255, 0.02);
-}
-.iv-ai-toggle input {
-  flex: none;
-  width: 18px;
-  height: 18px;
-  margin: 2px 0 0;
-  accent-color: #c89bff;
-}
-.iv-ai-toggle span {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.iv-ai-toggle b {
-  font-size: 15.5px;
-  color: var(--color-text);
-}
-.iv-ai-toggle small {
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--color-muted);
-}
-
-.iv-ask {
-  display: flex;
-  gap: 8px;
-}
-.iv-ask .iv-input {
-  height: 42px;
-}
-.iv-thinking {
-  margin-left: 4px;
-  letter-spacing: 0.2em;
-  animation: iv-pulse 1s ease-in-out infinite;
-}
-.iv-coach[data-thinking] {
-  border-left-color: #c89bff;
-}
-
-/* ------------------------------------------------------------ review: AI */
+/* -------------------------------------------------------- review: persona */
 .iv-stamps {
   display: flex;
   flex-wrap: wrap;
@@ -1455,84 +1399,6 @@ a.door:hover {
   color: var(--pc);
   animation: iv-rise 0.9s var(--ease-out-expo) 0.2s backwards;
 }
-.iv-ai-summary {
-  max-width: 70ch;
-  font-size: 17px;
-  line-height: 1.55;
-  color: var(--color-text);
-}
-.iv-ai-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  list-style: none;
-}
-.iv-ai-list li {
-  padding-left: 14px;
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: var(--color-soft);
-  border-left: 2px solid #52d68a;
-}
-.iv-ai-list[data-tone='bad'] li {
-  border-left-color: #ff5c77;
-}
-.iv-marked {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 18px;
-  color: #ff8fa1;
-  border: 1px solid rgba(255, 92, 119, 0.4);
-  background: rgba(255, 92, 119, 0.06);
-}
-.iv-marked blockquote {
-  font-size: 17px;
-  font-style: italic;
-  color: var(--color-text);
-}
-.iv-clar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 36px;
-  padding: 0 12px;
-  font-size: 14px;
-  color: #ff8fa1;
-  background: rgba(255, 92, 119, 0.06);
-}
-.iv-clar > span:nth-child(2) {
-  color: var(--color-soft);
-}
-.iv-clar[data-asked] {
-  color: #52d68a;
-  background: rgba(82, 214, 138, 0.06);
-}
-.iv-brief {
-  padding: 14px 16px;
-  border: 1px dashed rgba(255, 255, 255, 0.18);
-}
-.iv-brief summary {
-  cursor: pointer;
-  font-size: 12.5px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-gold);
-}
-.iv-brief[open] summary {
-  margin-bottom: 10px;
-}
-.iv-brief dt {
-  font-weight: 600;
-  color: var(--color-text);
-}
-.iv-brief dd {
-  margin: 2px 0 0;
-  font-size: 14.5px;
-  line-height: 1.5;
-  color: var(--color-soft);
-}
-
 .iv-calib thead th {
   font-family: var(--font-mono);
   font-size: 11.5px;

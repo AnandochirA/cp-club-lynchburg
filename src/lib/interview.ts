@@ -25,8 +25,6 @@ import {
   type TalkStats,
 } from '@/lib/interview-logic';
 import { calibrationTrend } from '@/lib/film';
-import { writeDebrief } from '@/lib/interviewer';
-import type { AiBrief, AiDebrief, AiUsage } from '@/lib/interviewer-logic';
 import { rankIndex } from '@/lib/progress';
 import type { Session } from '@/lib/session';
 
@@ -45,10 +43,6 @@ export type InterviewRecord = {
   mistakes: MistakeKey[];
   nextTime: string | null;
   persona: PersonaKey;
-  /** Run by the AI interviewer. */
-  ai: boolean;
-  /** Only once the round is finished: the interviewer's write-up, its brief (the solution), and the cost. */
-  aiReview: { debrief: AiDebrief | null; brief: AiBrief | null; usage: AiUsage } | null;
 };
 
 /** What the member adds after the round. */
@@ -78,11 +72,6 @@ type Row = {
   next_time: string | null;
   extras: Extras | null;
   persona: PersonaKey;
-  ai: boolean;
-  ai_debrief: AiDebrief | null;
-  ai_usage: AiUsage | null;
-  /** Joined from ai_briefs, and only selected for finished rounds. */
-  brief?: AiBrief | null;
 };
 
 const iso = (v: Date | string) => new Date(v).toISOString();
@@ -105,12 +94,6 @@ function toRecord(r: Row): InterviewRecord {
     mistakes: r.mistakes ?? [],
     nextTime: r.next_time ?? null,
     persona: r.persona ?? 'coach',
-    ai: r.ai ?? false,
-    // The brief holds the solution: it is only ever attached after the round is over.
-    aiReview:
-      r.ai && r.finished_at
-        ? { debrief: r.ai_debrief ?? null, brief: r.brief ?? null, usage: r.ai_usage ?? { calls: 0, inputTokens: 0, cachedTokens: 0, outputTokens: 0, ttsChars: 0 } }
-        : null,
   };
 }
 
@@ -126,7 +109,7 @@ export async function findResumable(session: Session, slug: string): Promise<Int
   return rows[0] ? toRecord(rows[0]) : null;
 }
 
-export type StartOptions = { mode: Mode; extras: Extras; persona: PersonaKey; ai: boolean };
+export type StartOptions = { mode: Mode; extras: Extras; persona: PersonaKey };
 
 /** "mystery" and blind draws pick a persona at random; the Coach is the default. */
 export function choosePersona(asked: unknown, mode: Mode): { persona: PersonaKey; mystery: boolean } {
@@ -146,9 +129,9 @@ export async function startInterview(session: Session, slug: string, o: StartOpt
   const d = emptyDraft();
   d.extras = o.extras;
   const rows = (await sql`
-    insert into interview_sessions (member_id, slug, mode, stage, stages, transcript, extras, persona, ai)
+    insert into interview_sessions (member_id, slug, mode, stage, stages, transcript, extras, persona)
     values (${session.member.id}, ${slug}, ${o.mode}, ${d.stage}, ${JSON.stringify(d.stages)}::jsonb,
-            ${JSON.stringify(d.transcript)}::jsonb, ${JSON.stringify(o.extras)}::jsonb, ${o.persona}, ${o.ai})
+            ${JSON.stringify(d.transcript)}::jsonb, ${JSON.stringify(o.extras)}::jsonb, ${o.persona})
     returning *
   `) as Row[];
   return toRecord(rows[0]);
@@ -209,9 +192,8 @@ export async function lastNextTime(session: Session): Promise<string | null> {
 export async function getInterview(session: Session, id: number): Promise<InterviewRecord> {
   const sql = db();
   const rows = (await sql`
-    select s.*, case when s.finished_at is not null and s.ai then b.brief end as brief
-    from interview_sessions s left join ai_briefs b on b.slug = s.slug
-    where s.id = ${id} and s.member_id = ${session.member.id}
+    select * from interview_sessions
+    where id = ${id} and member_id = ${session.member.id}
   `) as Row[];
   if (!rows[0]) throw new InterviewError('not_found');
   return toRecord(rows[0]);
@@ -270,17 +252,6 @@ export async function finishInterview(session: Session, id: number, raw: unknown
           ac_after_start = ${ac}, finished_at = now(), updated_at = now()
       where id = ${id} and member_id = ${session.member.id}
     `;
-    // The AI interviewer writes its debrief once, now. A failure here must not lose the round.
-    if (current.ai) {
-      await writeDebrief(session.member.id, id, d, {
-        slug: current.slug,
-        persona: current.persona,
-        mode: current.mode,
-        acAfterStart: ac,
-        metrics: transcriptMetrics(d),
-        talk: talkStats(d),
-      }).catch((err) => console.error('debrief failed', err));
-    }
   }
   await sql`
     update interview_sessions
@@ -298,14 +269,13 @@ export async function arenaFor(session: Session): Promise<Arena> {
   const sql = db();
   const rows = (await sql`
     select id, slug, mode, finished_at, ac_after_start, scores, talk_stats, mistakes, metrics,
-           coalesce(extras->>'pattern', '') as pattern, ai_debrief->'scores' as ai_scores
+           coalesce(extras->>'pattern', '') as pattern
     from interview_sessions
     where member_id = ${session.member.id} and finished_at is not null
     order by finished_at desc limit 400
   `) as (Pick<Row, 'id' | 'slug' | 'mode' | 'ac_after_start' | 'scores' | 'talk_stats' | 'mistakes' | 'metrics'> & {
     finished_at: Date | string;
     pattern: string;
-    ai_scores: Scores | null;
   })[];
   const facts: RoundFacts[] = rows.map((r) => ({
     id: Number(r.id),
@@ -318,7 +288,6 @@ export async function arenaFor(session: Session): Promise<Arena> {
     mistakes: r.mistakes ?? [],
     pattern: r.pattern,
     metrics: r.metrics,
-    aiScores: r.ai_scores,
   }));
   return { ...arenaSummary(facts, Date.now()), calibration: calibrationTrend(facts) };
 }

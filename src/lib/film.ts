@@ -9,7 +9,7 @@ import { patternMatches, stageById, type ScoreKey, type StageId } from './interv
 
 export type Segment = { stage: StageId; from: number; to: number };
 export type Span = { from: number; to: number; line: number };
-export type MomentKind = 'idea' | 'complexity' | 'silence' | 'markedDown' | Exclude<LineTag, 'prompt' | 'warn'>;
+export type MomentKind = 'idea' | 'complexity' | 'silence' | Exclude<LineTag, 'prompt' | 'warn'>;
 export type Moment = { at: number; kind: MomentKind; label: string; line: number | null };
 export type Film = { total: number; segments: Segment[]; speech: Span[]; coach: Span[]; gaps: { from: number; to: number }[]; moments: Moment[] };
 
@@ -36,7 +36,7 @@ export function parseClock(s: string): number | null {
   return ((Number(m[1] ?? 0) * 60 + Number(m[2])) * 60 + Number(m[3])) * 1000;
 }
 
-export function film(d: Draft, metrics: Metrics | null, markedDown?: { at: string; why: string } | null): Film {
+export function film(d: Draft, metrics: Metrics | null): Film {
   const lines = d.transcript;
   const stageTotal = Object.values(d.stages).reduce((n, s) => n + s.ms, 0);
   const total = Math.max(stageTotal, lines.length ? lines[lines.length - 1].at + 1000 : 0, 1000);
@@ -100,8 +100,6 @@ export function film(d: Draft, metrics: Metrics | null, markedDown?: { at: strin
   });
   const longest = gaps.reduce<{ from: number; to: number } | null>((a, g) => (!a || g.to - g.from > a.to - a.from ? g : a), null);
   if (longest) moments.push({ at: longest.from, kind: 'silence', label: `Went quiet for ${clock(longest.to - longest.from)}`, line: lineAt(longest.from) });
-  const md = markedDown ? parseClock(markedDown.at) : null;
-  if (markedDown && md !== null) moments.push({ at: md, kind: 'markedDown', label: `Marked down: ${markedDown.why}`, line: lineAt(md) });
   moments.sort((a, b) => a.at - b.at);
   return { total, segments, speech, coach, gaps, moments };
 }
@@ -112,7 +110,7 @@ const short = (t: string) => (t.length > 70 ? `${t.slice(0, 68)}…` : t);
 
 /**
  * What the evidence alone says, per signal, on the same 1-4 scale as the
- * self-score. Used as the yardstick when there is no AI write-up.
+ * self-score. Used as the yardstick for your self-score.
  */
 export function signalScores(
   m: Metrics | null,
@@ -148,7 +146,7 @@ export function calibrationTrend(rounds: RoundFacts[], n = 10): { key: ScoreKey;
     .map((r) => {
       const p = findProblem(r.slug);
       const hit = r.mode === 'blind' && p ? patternMatches(r.pattern, p.topic) : null;
-      return calibrate(scored(r.scores) ? r.scores : null, r.aiScores ?? signalScores(r.metrics, r.talkStats, r.acAfterStart, r.mistakes, hit));
+      return calibrate(scored(r.scores) ? r.scores : null, signalScores(r.metrics, r.talkStats, r.acAfterStart, r.mistakes, hit));
     })
     .filter((c): c is CalibrationRow[] => c !== null)
     .slice(0, n);

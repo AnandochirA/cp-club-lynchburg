@@ -46,18 +46,3 @@ export function sanitizeStatement(html: string): string {
   out += escapeText(src.slice(last));
   return out;
 }
-
-const ENTITIES: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', '#39': "'", nbsp: ' ', le: '≤', ge: '≥', ne: '≠', times: '×', minus: '−' };
-
-/** Plain text, for the AI interviewer's brief. */
-export function statementText(html: string): string {
-  return html
-    .replace(DROP_WITH_CONTENT, '')
-    .replace(/<sup>/gi, '^')
-    .replace(/<(br|\/p|\/li|\/pre|\/div)\b[^>]*>/gi, '\n')
-    .replace(/<li\b[^>]*>/gi, '- ')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&(#?\w+);/g, (all, e: string) => ENTITIES[e] ?? (e.startsWith('#') ? String.fromCharCode(Number(e.slice(1))) : all))
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}

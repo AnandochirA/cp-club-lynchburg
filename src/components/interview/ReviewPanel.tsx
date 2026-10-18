@@ -6,7 +6,6 @@ import type { Problem } from '@/lib/curriculum';
 import type { InterviewRecord, PostMortem } from '@/lib/interview';
 import { MISTAKES, PERSONAS, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C, patternMatches } from '@/lib/interview-kit';
 import { calibrate, signalScores } from '@/lib/film';
-import { estimateCost } from '@/lib/interviewer-logic';
 import {
   MAX_NEXT_TIME,
   MISTAKE_KEYS,
@@ -51,13 +50,11 @@ export function ReviewPanel({
   const t = record.talkStats;
   const d = record.draft;
   const verdict = verdictOf(record.scores);
-  const ai = record.aiReview;
-  const debrief = ai?.debrief ?? null;
   const persona = PERSONAS[record.persona];
   const revealPersona = record.persona !== 'coach' || d.extras.mystery;
-  // The yardstick for calibration: the AI's scores when there are any, else what the signals say.
+  // The yardstick for calibration: what the signals say.
   const blindHit = record.mode === 'blind' ? patternMatches(d.extras.pattern, problem.topic) : null;
-  const bench = debrief?.scores ?? signalScores(record.metrics, t, record.acAfterStart, record.mistakes, blindHit);
+  const bench = signalScores(record.metrics, t, record.acAfterStart, record.mistakes, blindHit);
   const calib = calibrate(record.scores, bench);
   const seek = (line: number) => {
     setFocus(line);
@@ -95,8 +92,7 @@ export function ReviewPanel({
             </span>
           </div>
           <div className="iv-stamps">
-            {debrief && <VerdictStamp verdict={debrief.verdict} date={date} slam who={C.aiReview.stamp} sub={persona.name} />}
-            <VerdictStamp key={verdict ?? 'pending'} verdict={verdict} date={date} slam={slam} who={debrief ? C.aiReview.you : undefined} />
+            <VerdictStamp key={verdict ?? 'pending'} verdict={verdict} date={date} slam={slam} />
           </div>
         </div>
 
@@ -160,87 +156,6 @@ export function ReviewPanel({
         </section>
       )}
 
-      {ai && (
-        <section className="panel flex flex-col gap-6 p-5 lg:p-7" aria-labelledby="ai-title">
-          <h3 id="ai-title" className="font-display caps m-0 text-[30px] leading-[0.95] font-black">
-            {C.aiReview.title}
-          </h3>
-          {!debrief ? (
-            <p className="m-0 text-[14.5px] text-muted">{C.aiReview.failed}</p>
-          ) : (
-            <>
-              <p className="iv-ai-summary m-0">{debrief.summary}</p>
-              <div className="grid grid-cols-[minmax(0,1fr)] gap-5 md:grid-cols-2">
-                <div className="flex flex-col gap-2">
-                  <span className="arena-h font-mono">{C.aiReview.strengths}</span>
-                  <ul className="iv-ai-list m-0 p-0" data-tone="good">
-                    {debrief.strengths.map((x) => (
-                      <li key={x}>{x}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <span className="arena-h font-mono">{C.aiReview.concerns}</span>
-                  <ul className="iv-ai-list m-0 p-0" data-tone="bad">
-                    {debrief.concerns.map((x) => (
-                      <li key={x}>{x}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              {debrief.markedDown && (
-                <div className="iv-marked">
-                  <span className="font-mono text-[11.5px] tracking-[0.14em] uppercase">
-                    {C.aiReview.markedDown} · {debrief.markedDown.at}
-                  </span>
-                  <blockquote className="m-0">“{debrief.markedDown.quote}”</blockquote>
-                  <p className="m-0 text-[14.5px] text-soft">{debrief.markedDown.why}</p>
-                </div>
-              )}
-              {debrief.clarifications.length > 0 && (
-                <div className="flex flex-col gap-2">
-                  <span className="arena-h font-mono">{C.aiReview.clarifications}</span>
-                  <ul className="m-0 flex list-none flex-col gap-1.5 p-0">
-                    {debrief.clarifications.map((c) => (
-                      <li key={c.question} className="iv-clar" data-asked={c.asked ? '1' : undefined}>
-                        <Icon name={c.asked ? 'check' : 'close'} size={14} stroke={3} />
-                        <span className="flex-grow">{c.question}</span>
-                        <span className="font-mono text-[11px] uppercase">{c.asked ? C.aiReview.asked : C.aiReview.missed}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </>
-          )}
-          {ai.brief && (
-            <details className="iv-brief">
-              <summary className="font-mono">{C.aiReview.notes}</summary>
-              <p className="m-0 text-[13.5px] text-dim">{C.aiReview.notesLead}</p>
-              <dl className="m-0 flex flex-col gap-3">
-                <div>
-                  <dt>{C.aiReview.brute}</dt>
-                  <dd>
-                    {ai.brief.bruteForce.approach} <span className="font-mono text-dim">({ai.brief.bruteForce.time} time, {ai.brief.bruteForce.space} space)</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>{C.aiReview.optimal}</dt>
-                  <dd>
-                    {ai.brief.optimal.approach} <span className="font-mono text-dim">({ai.brief.optimal.time} time, {ai.brief.optimal.space} space)</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>{C.aiReview.pitfalls}</dt>
-                  <dd>{ai.brief.pitfalls.join(' · ')}</dd>
-                </div>
-              </dl>
-            </details>
-          )}
-          <p className="m-0 font-mono text-[12px] text-dim">{C.aiReview.cost(`$${estimateCost(ai.usage).toFixed(3)}`)}</p>
-        </section>
-      )}
-
       {d.transcript.length > 1 && (
         <section className="panel flex flex-col gap-4 p-5 lg:p-7" aria-labelledby="film-title">
           <div className="flex flex-col gap-1.5">
@@ -249,7 +164,7 @@ export function ReviewPanel({
             </h3>
             <p className="m-0 text-[14px] text-muted">{C.film.lead}</p>
           </div>
-          <GameFilm draft={d} metrics={record.metrics} markedDown={debrief?.markedDown ?? null} onSeek={seek} />
+          <GameFilm draft={d} metrics={record.metrics} onSeek={seek} />
         </section>
       )}
 
@@ -433,7 +348,7 @@ export function ReviewPanel({
           <h3 id="calib-title" className="font-display caps m-0 text-[30px] leading-[0.95] font-black">
             {C.calib.title}
           </h3>
-          <p className="m-0 text-[14px] text-muted">{debrief ? C.calib.leadAi : C.calib.leadSignals}</p>
+          <p className="m-0 text-[14px] text-muted">{C.calib.leadSignals}</p>
         </div>
         {!record.scores ? (
           <p className="m-0 text-[14.5px] text-soft">{C.calib.locked}</p>
@@ -446,7 +361,7 @@ export function ReviewPanel({
                 <tr>
                   <th scope="col" />
                   <th scope="col">{C.calib.you}</th>
-                  <th scope="col">{debrief ? C.calib.ai : C.calib.signals}</th>
+                  <th scope="col">{C.calib.signals}</th>
                   <th scope="col">{C.calib.gap}</th>
                 </tr>
               </thead>

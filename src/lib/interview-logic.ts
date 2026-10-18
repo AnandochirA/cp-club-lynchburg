@@ -343,8 +343,6 @@ export type RoundFacts = {
   /** The blind pattern call, if any. */
   pattern: string;
   metrics: Metrics | null;
-  /** The AI interviewer's scores, when it ran the round. */
-  aiScores: Scores | null;
 };
 
 const DAY = 24 * 60 * 60_000;

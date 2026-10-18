@@ -423,61 +423,44 @@ export const CURVEBALL_AT = 0.25;
 /**
  * Who is interviewing you. Real interviewers are not all kind; each persona
  * trains staying steady under a different kind of pressure. Their tricks are
- * scripted (timing-based, free); with the AI interviewer on, `ai` also shapes
- * how it talks. `voice` and `voiceStyle` drive the natural (OpenAI) voice;
- * `rate` the browser's fallback voice.
+ * scripted and timing-based. `rate` is how fast the browser voice speaks.
  */
 export type PersonaKey = 'coach' | 'stone' | 'interrupter' | 'misleader' | 'rusher';
 export const PERSONA_KEYS: PersonaKey[] = ['coach', 'stone', 'interrupter', 'misleader', 'rusher'];
 
 export const PERSONAS: Record<
   PersonaKey,
-  { name: string; how: string; reveal: string; voice: string; voiceStyle: string; rate: number; ai: string }
+  { name: string; how: string; reveal: string; rate: number }
 > = {
   coach: {
     name: 'The Coach',
     how: 'Warm and fair. Asks good follow-ups and nudges you when you go quiet.',
     reveal: 'A fair interviewer. The baseline: if you struggled here, it was the problem, not the person.',
-    voice: 'marin',
-    voiceStyle: 'A warm, encouraging senior engineer. Calm, clear, friendly pace.',
     rate: 1,
-    ai: 'You are supportive and fair, like a good senior engineer. Encourage briefly when the candidate is on track, and push back clearly when they are not.',
   },
   stone: {
     name: 'The Stone Face',
     how: 'Says almost nothing. No nudges, no reassurance, never “good”. You keep yourself going.',
     reveal: 'Gave you nothing back on purpose. Silence from an interviewer is not a bad sign; did you keep talking anyway?',
-    voice: 'onyx',
-    voiceStyle: 'Flat, neutral and unreadable. Short sentences, slow, no warmth at all.',
     rate: 0.95,
-    ai: 'You are neutral and unreadable. Every reply is at most ten words. Never praise, never reassure, never say "good" or "great". Answer clarifying questions with the bare fact and nothing else. Push back only on clear errors, in a few flat words.',
   },
   interrupter: {
     name: 'The Interrupter',
     how: 'Cuts in while you are mid-sentence: “wait, why?” Answer, then pick your thread back up.',
     reveal: 'Cut in on purpose to break your flow. Did you answer and get back on track, or lose the thread?',
-    voice: 'ash',
-    voiceStyle: 'Brisk and a little impatient. Cuts in quickly and sharply.',
     rate: 1.1,
-    ai: 'You often cut in with a sharp, short question about what the candidate just said: why it works, what its complexity is, what breaks it.',
   },
   misleader: {
     name: 'The Misleader',
     how: 'Agreeable, and once in a while points you the wrong way. Defend your approach.',
     reveal: 'Steered you toward a worse idea on purpose and agreed with everything. Did you defend your approach, or follow?',
-    voice: 'coral',
-    voiceStyle: 'Warm, agreeable and confident, as if every idea is a good one.',
     rate: 1,
-    ai: 'You are agreeable. Never correct the candidate\'s approach yourself; if it is wrong, say it sounds fine and let them find out. You still answer clarifying questions truthfully.',
   },
   rusher: {
     name: 'The Rusher',
     how: 'Tells you time is running out when it isn’t. Stay calm and stay thorough.',
     reveal: 'The time warnings were fake. Did you skip testing or edge cases because you felt rushed?',
-    voice: 'verse',
-    voiceStyle: 'Fast, hurried and slightly stressed, like the meeting is running over.',
     rate: 1.12,
-    ai: 'You are in a hurry. Keep replies very short, push the candidate to move faster, and mention that time is short now and then.',
   },
 };
 
@@ -745,47 +728,15 @@ export const interviewCopy = {
   },
   calib: {
     title: 'Calibration',
-    leadAi: 'Your self-score next to the AI interviewer’s. Interviewers can only grade what they see and hear.',
-    leadSignals: 'Your self-score next to what your transcript signals say. No AI write-up this round, so the evidence is the yardstick.',
+    leadSignals: 'Your self-score next to what your transcript signals say. Interviewers can only grade what they see and hear.',
     you: 'You',
-    ai: 'Interviewer',
     signals: 'Evidence',
     gap: 'Gap',
     locked: 'Lock in your verdict to see how your self-score compares.',
-    noYardstick: 'Nothing to compare against this round: the mic was off and there was no AI interviewer.',
+    noYardstick: 'Nothing to compare against this round: the mic was off, so there is no transcript to measure.',
     over: (title: string, by: string) => `You rate your ${title.toLowerCase()} ${by} higher than the evidence. That gap is what surprises people in real loops.`,
     under: (title: string, by: string) => `You are harder on your ${title.toLowerCase()} than the evidence, by ${by}. Give yourself some credit.`,
     even: 'Well calibrated: your self-score matches the evidence within half a point everywhere.',
-  },
-  aiReview: {
-    title: 'The interviewer’s write-up',
-    stamp: 'Interviewer',
-    you: 'You',
-    strengths: 'Strengths',
-    concerns: 'Concerns',
-    markedDown: 'Where it turned',
-    clarifications: 'Clarifying questions',
-    asked: 'asked',
-    missed: 'missed',
-    notes: 'The interviewer’s notes',
-    notesLead: 'What it knew all along. Now you can see it.',
-    brute: 'Brute force',
-    optimal: 'Optimal',
-    pitfalls: 'Common mistakes',
-    cost: (usd: string) => `This round cost about ${usd} in AI.`,
-    failed: 'The interviewer could not write its debrief this time. Your own review below still stands.',
-  },
-  ai: {
-    toggle: 'AI interviewer',
-    toggleNote:
-      'It listens to what you say, answers your clarifying questions, pushes back when you go wrong, and writes a real debrief at the end. A few cents a round.',
-    natural: 'Natural voice',
-    browser: 'Browser voice',
-    ask: 'Ask',
-    askPlaceholder: 'Or type a question for the interviewer…',
-    writing: 'The interviewer is writing your debrief…',
-    down: 'The AI interviewer isn’t answering right now, so the scripted coach is covering. It will keep trying.',
-    offNow: 'The AI interviewer is out for this round (daily limit reached, or it’s switched off). The scripted coach takes over.',
   },
   persona: {
     choose: 'Pick your interviewer',

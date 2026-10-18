@@ -1,7 +1,7 @@
 import 'server-only';
 import { db } from '@/lib/db';
 import { fetchStatement } from '@/lib/leetcode';
-import { sanitizeStatement, statementText } from '@/lib/statement-html';
+import { sanitizeStatement } from '@/lib/statement-html';
 import { guardedCall } from '@/lib/sync';
 
 export type Statement = { html: string | null; paid: boolean };
@@ -35,11 +35,4 @@ export async function statementFor(slug: string): Promise<Statement | null> {
     if (rows[0]) return { html: rows[0].html, paid: rows[0].paid };
     throw err;
   }
-}
-
-/** The cached statement as plain text, for the AI interviewer's brief. Never fetches. */
-export async function cachedStatementText(slug: string): Promise<string | null> {
-  const sql = db();
-  const rows = (await sql`select html from problem_statements where slug = ${slug}`) as { html: string | null }[];
-  return rows[0]?.html ? statementText(rows[0].html) : null;
 }
