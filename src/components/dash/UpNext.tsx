@@ -1,7 +1,10 @@
 'use client';
 
+import Link from 'next/link';
+import { IS_PREVIEW } from '@/lib/client-api';
 import { memberPage as M, rankSection } from '@/lib/content';
 import type { Problem } from '@/lib/curriculum';
+import { interviewCopy as IV } from '@/lib/interview-kit';
 import { Icon } from '../icons';
 
 const diffColor = (d: string) => rankSection.difficulties.find((x) => x.label === d.toLowerCase())?.color ?? '#55575f';
@@ -81,6 +84,19 @@ export function UpNext({
                   Solve on LeetCode <Icon name="arrow" size={17} stroke={2.4} className="arrow" />
                 </span>
               </a>
+              {!IS_PREVIEW && (
+                <Link
+                  href={`/interview/${p.slug}`}
+                  className="font-mono mt-2 flex min-h-10 items-center gap-2 px-1 text-[12.5px] text-white/60 no-underline hover:text-text"
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="9" y="3" width="6" height="11" rx="3" />
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                  </svg>
+                  {IV.practice}
+                  <Icon name="arrow" size={13} stroke={2.2} />
+                </Link>
+              )}
             </li>
           ))}
         </ol>

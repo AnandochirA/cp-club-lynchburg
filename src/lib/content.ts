@@ -469,6 +469,10 @@ export const apiErrors: Record<string, string> = {
   bad_problem: 'That problem isn’t in this room’s set.',
   message_gone: 'That message is already gone.',
   not_found: 'That wasn’t found.',
+  // interview mode
+  interview_limit: 'That’s 10 mock interviews today. Rest up and come back tomorrow.',
+  too_big: 'This session got too long to save. Wrap it up and finish.',
+  bad_request: 'Something about that request was off. Reload the page and try again.',
 };
 
 export const roadmap = {

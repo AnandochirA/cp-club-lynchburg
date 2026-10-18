@@ -1,0 +1,458 @@
+/* ==========================================================================
+   INTERVIEW MODE. Built on the dashboard's panels and bar (dash.css); this
+   only adds the step rail, the interviewer's line, notes, checklist,
+   transcript and the review's score pickers. --tier is the problem's
+   difficulty colour, set inline on .dash.
+   ========================================================================== */
+
+/* --------------------------------------------------------------- the rail */
+.iv-rail {
+  display: flex;
+  gap: 6px;
+  margin: 0 -20px;
+  padding: 2px 20px 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.iv-rail::-webkit-scrollbar {
+  display: none;
+}
+.iv-rail > li {
+  flex: 1 0 auto;
+}
+@media (min-width: 1024px) {
+  .iv-rail {
+    margin: 0;
+    padding: 0;
+    overflow: visible;
+  }
+  .iv-rail > li {
+    flex: 1 1 0;
+  }
+}
+.iv-step {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 12px;
+  font: 600 14px var(--font-sans);
+  color: var(--color-muted);
+  text-align: left;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition:
+    background-color 0.25s,
+    border-color 0.25s,
+    color 0.25s;
+}
+.iv-step:hover {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.07);
+}
+.iv-step[data-state='current'] {
+  color: var(--color-text);
+  border-color: color-mix(in srgb, var(--tier) 65%, transparent);
+  background: color-mix(in srgb, var(--tier) 12%, transparent);
+}
+.iv-step[data-state='done'] {
+  color: var(--color-soft);
+}
+.iv-step[data-state='skipped'] .iv-step-title {
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.35);
+}
+.iv-step-dot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  font: 700 11.5px var(--font-mono);
+  clip-path: var(--hex);
+  background: rgba(255, 255, 255, 0.12);
+}
+.iv-step[data-state='current'] .iv-step-dot {
+  background: var(--tier);
+  color: #0b0c10;
+}
+.iv-step[data-state='done'] .iv-step-dot {
+  background: #52d68a;
+  color: #08130d;
+}
+.iv-step-title {
+  white-space: nowrap;
+}
+.iv-step-time {
+  margin-left: auto;
+  padding-left: 6px;
+  font-size: 11.5px;
+  color: var(--color-dim);
+}
+.iv-step-time[data-over] {
+  color: var(--color-gold);
+}
+
+/* ----------------------------------------------------------- the step bar */
+.iv-bar {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.iv-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--tier);
+  transition: width 1s linear;
+}
+.iv-bar[data-over] > i {
+  background: var(--color-gold);
+}
+
+/* ------------------------------------------------------- the interviewer */
+.iv-coach {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-left: 3px solid var(--tier);
+  background: rgba(255, 255, 255, 0.04);
+}
+.iv-wave {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+.iv-wave b {
+  width: 3px;
+  height: 4px;
+  background: var(--tier);
+}
+.iv-coach[data-speaking] .iv-wave b {
+  animation: iv-wave 0.9s ease-in-out infinite;
+}
+.iv-coach[data-speaking] .iv-wave b:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.iv-coach[data-speaking] .iv-wave b:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes iv-wave {
+  50% {
+    height: 12px;
+  }
+}
+
+.iv-link {
+  min-height: 36px;
+  padding: 0;
+  font: 600 14px var(--font-sans);
+  color: var(--color-soft);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.25);
+  text-underline-offset: 4px;
+}
+.iv-link:hover {
+  color: var(--color-text);
+}
+.iv-link:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+/* ------------------------------------------------------- notes, checklist */
+.iv-notes {
+  width: 100%;
+  min-height: 180px;
+  padding: 14px 16px;
+  font: 14.5px/1.6 var(--font-mono);
+  color: var(--color-text);
+  resize: vertical;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0;
+}
+.iv-notes::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+.iv-notes:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--tier) 70%, transparent);
+}
+.iv-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 32px;
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: var(--color-soft);
+  cursor: pointer;
+}
+.iv-check input {
+  flex: none;
+  width: 17px;
+  height: 17px;
+  margin: 2px 0 0;
+  accent-color: #52d68a;
+  cursor: pointer;
+}
+.iv-check:has(input:checked) span {
+  color: var(--color-muted);
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ------------------------------------------------------------ transcript */
+.iv-transcript {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+@media (min-width: 1280px) {
+  .iv-transcript[data-live] {
+    max-height: calc(100dvh - 300px);
+  }
+}
+.iv-tr-stage {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.iv-tr-line {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+.iv-tr-line[data-who='coach'] {
+  color: color-mix(in srgb, var(--tier) 55%, #fff);
+}
+.iv-tr-line[data-who='interim'] {
+  color: var(--color-dim);
+  font-style: italic;
+}
+.iv-tr-at {
+  flex: none;
+  width: 38px;
+  padding-top: 2px;
+  font-size: 11px;
+  color: var(--color-dim);
+}
+
+.iv-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #52d68a;
+}
+.iv-meter i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: iv-pulse 1.4s ease-in-out infinite;
+}
+.iv-meter[data-quiet] {
+  color: var(--color-gold);
+}
+@keyframes iv-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ----------------------------------------------------------------- intro */
+.iv-intro-steps {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+.iv-intro-steps li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr) auto;
+  gap: 2px 12px;
+  padding: 10px 0;
+  font-size: 14.5px;
+  line-height: 1.45;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.iv-intro-steps li > :nth-child(3) {
+  grid-column: 2;
+  grid-row: 2;
+}
+.iv-intro-steps li > :nth-child(4) {
+  grid-column: 3;
+  grid-row: 1;
+}
+@media (min-width: 768px) {
+  .iv-intro-steps li {
+    grid-template-columns: 22px 150px minmax(0, 1fr) 40px;
+  }
+  .iv-intro-steps li > :nth-child(3) {
+    grid-column: 3;
+    grid-row: 1;
+  }
+  .iv-intro-steps li > :nth-child(4) {
+    grid-column: 4;
+    text-align: right;
+  }
+}
+
+/* ---------------------------------------------------------------- review */
+.iv-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 768px) {
+  .iv-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.iv-stats > div,
+.iv-stats > p {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  background: #101116;
+}
+.iv-stats > p {
+  grid-column: span 3;
+}
+.iv-stats dt {
+  font: 11.5px var(--font-mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+.iv-stats dd {
+  margin: 0;
+  font: 900 38px/0.9 var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+
+.iv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+.iv-table th,
+.iv-table td {
+  padding: 8px 10px 8px 0;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.iv-table th {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.iv-table td {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--color-muted);
+}
+
+.iv-score {
+  position: relative;
+  cursor: pointer;
+}
+.iv-score input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.iv-score span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: var(--color-muted);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
+}
+.iv-score span b {
+  font-size: 20px;
+  color: var(--color-text);
+}
+.iv-score:hover span {
+  color: var(--color-text);
+  background: rgba(255, 255, 255, 0.05);
+}
+.iv-score input:checked + span {
+  color: var(--color-text);
+  border-color: var(--tier);
+  background: color-mix(in srgb, var(--tier) 16%, transparent);
+}
+.iv-score input:focus-visible + span {
+  outline: 2px solid var(--tier);
+  outline-offset: 2px;
+}
+
+.iv-pre {
+  padding: 12px 14px;
+  font: 13.5px/1.6 var(--font-mono);
+  color: var(--color-soft);
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ------------------------------------------------------- dashboard card */
+.iv-dim-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.07);
+}
+.iv-dim-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--tier);
+}
+.iv-dim[data-weak] .iv-dim-bar > i {
+  background: var(--color-gold);
+}
+.iv-spark {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  height: 48px;
+}
+.iv-spark > i {
+  flex: 1;
+  min-height: 2px;
+  max-width: 18px;
+  background: color-mix(in srgb, var(--tier) 75%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iv-coach[data-speaking] .iv-wave b,
+  .iv-meter i {
+    animation: none;
+  }
+  .iv-bar > i {
+    transition: none;
+  }
+}

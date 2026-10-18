@@ -10,6 +10,7 @@ import { TIERS } from '@/lib/hexgrid';
 import type { MemberView } from '@/lib/member-view';
 import { AppBar } from './dash/AppBar';
 import { Ceremony } from './dash/Ceremony';
+import { InterviewReps } from './dash/InterviewReps';
 import { useCalm } from './dash/hooks';
 import { Momentum } from './dash/Momentum';
 import { MyGrid } from './dash/MyGrid';
@@ -195,6 +196,8 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             <Topics solved={solvedSet} rank={me.rank} />
           </div>
         </div>
+
+        <InterviewReps />
 
         <ProblemList focus={me.focus} set={set} left={left} fresh={fresh} onHover={setHl} />
 

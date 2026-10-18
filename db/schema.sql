@@ -163,3 +163,26 @@ alter table chat_messages add column if not exists meta jsonb;
 alter table chat_messages alter column member_id drop not null;
 create index if not exists chat_messages_announce_idx on chat_messages (rank, id desc)
   where kind = 'announcement' and deleted_at is null;
+
+-- Interview mode: one row per mock interview a member runs on a problem.
+-- `stages` and `transcript` are the client's draft after cleanDraft
+-- (src/lib/interview-logic.ts), saved every few seconds while it runs; no
+-- audio is ever stored, only recognised text. `talk_stats` is computed on the
+-- server at finish. `ac_after_start` is whether an Accepted for this slug
+-- landed in ac_events after the session started.
+create table if not exists interview_sessions (
+  id              bigserial   primary key,
+  member_id       bigint      not null references members (id) on delete cascade,
+  slug            text        not null,
+  started_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now(),
+  finished_at     timestamptz,
+  stage           text        not null default 'read',
+  stages          jsonb       not null default '{}'::jsonb,
+  transcript      jsonb       not null default '[]'::jsonb,
+  mic             boolean     not null default false,
+  scores          jsonb,
+  talk_stats      jsonb,
+  ac_after_start  boolean     not null default false
+);
+create index if not exists interview_sessions_member_idx on interview_sessions (member_id, started_at desc);

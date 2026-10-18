@@ -1,8 +1,11 @@
 'use client';
 
+import Link from 'next/link';
 import { useState } from 'react';
 import { memberPage as M, rankName, rankSection } from '@/lib/content';
 import type { Problem, RankKey } from '@/lib/curriculum';
+import { IS_PREVIEW } from '@/lib/client-api';
+import { interviewCopy as IV } from '@/lib/interview-kit';
 import { Icon } from '../icons';
 
 const SHOW = 12;
@@ -101,7 +104,12 @@ export function ProblemList({
             const solved = !left.has(p.slug);
             const isFresh = fresh.has(p.slug);
             return (
-              <li key={p.slug} data-solved={solved ? 'true' : 'false'} data-fresh={isFresh ? 'true' : undefined}>
+              <li
+                key={p.slug}
+                data-solved={solved ? 'true' : 'false'}
+                data-fresh={isFresh ? 'true' : undefined}
+                className="flex items-stretch gap-1.5"
+              >
                 <a
                   href={`https://leetcode.com/problems/${p.slug}/`}
                   target="_blank"
@@ -110,7 +118,7 @@ export function ProblemList({
                   onPointerLeave={() => onHover(null)}
                   onFocus={() => onHover(p.slug)}
                   onBlur={() => onHover(null)}
-                  className={`row flex items-center gap-3 rounded-none border px-3 py-2.5 text-text no-underline transition-colors hover:text-text ${
+                  className={`row flex min-w-0 flex-grow items-center gap-3 rounded-none border px-3 py-2.5 text-text no-underline transition-colors hover:text-text ${
                     solved
                       ? 'border-[#52D68A]/25 bg-[#52D68A]/[0.07] hover:bg-[#52D68A]/[0.12]'
                       : 'border-transparent bg-white/4 hover:bg-white/8'
@@ -133,6 +141,20 @@ export function ProblemList({
                   </span>
                   <Icon name="external" size={14} stroke={2} className="shrink-0 text-dim" />
                 </a>
+                {!IS_PREVIEW && (
+                  <Link
+                    href={`/interview/${p.slug}`}
+                    aria-label={IV.mockLabel(p.title)}
+                    title={IV.mockLabel(p.title)}
+                    className="font-mono flex shrink-0 items-center gap-1.5 border border-white/10 bg-transparent px-3 text-[12px] text-muted no-underline transition-colors hover:bg-white/8 hover:text-text"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <rect x="9" y="3" width="6" height="11" rx="3" />
+                      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                    </svg>
+                    <span className="hidden sm:inline">{IV.mock}</span>
+                  </Link>
+                )}
               </li>
             );
           })}
