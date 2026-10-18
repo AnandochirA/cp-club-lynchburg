@@ -324,8 +324,8 @@ export type RoundFacts = {
 };
 
 const DAY = 24 * 60 * 60_000;
-/** Days until a failed problem comes back, then each pass pushes it further out. Pass the last one: mastered. */
-export const REDO_DAYS = [1, 3, 7, 21];
+/** A failed problem comes back twice: 3 days after the fail, then 14 days after passing that retry. Pass both: mastered. */
+export const REDO_DAYS = [3, 14];
 export const MAX_ROUND_MS = 50 * 60_000;
 
 /**
@@ -339,7 +339,7 @@ export function failedRound(r: RoundFacts): boolean {
   return r.mistakes.includes('froze') || r.mistakes.includes('wrong_pattern');
 }
 
-export type RedoItem = { slug: string; dueAt: string; /** 0..3: which interval it is on */ box: number; overdue: boolean };
+export type RedoItem = { slug: string; dueAt: string; /** 0 or 1: which retry it is on */ box: number; overdue: boolean };
 export type RedoQueue = { due: RedoItem[]; upcoming: RedoItem[]; mastered: number };
 
 export function redoQueue(rounds: RoundFacts[], now: number): RedoQueue {
