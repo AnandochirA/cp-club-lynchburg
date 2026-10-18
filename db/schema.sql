@@ -196,3 +196,36 @@ alter table interview_sessions add column if not exists metrics jsonb;
 alter table interview_sessions add column if not exists mistakes text[] not null default '{}';
 alter table interview_sessions add column if not exists next_time text;
 alter table interview_sessions add column if not exists extras jsonb not null default '{}'::jsonb;
+
+-- Behavioral rounds. A member's story bank (STAR: situation, task, action,
+-- result) tagged with the competencies each story covers, and one row per
+-- practice answer: the recognised text of the answer and the follow-up, the
+-- signals read off it, and the member's own STAR self-check.
+create table if not exists stories (
+  id          bigserial   primary key,
+  member_id   bigint      not null references members (id) on delete cascade,
+  title       text        not null,
+  situation   text        not null default '',
+  task        text        not null default '',
+  action      text        not null default '',
+  result      text        not null default '',
+  tags        text[]      not null default '{}',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index if not exists stories_member_idx on stories (member_id);
+
+create table if not exists behavioral_rounds (
+  id           bigserial   primary key,
+  member_id    bigint      not null references members (id) on delete cascade,
+  question_id  text        not null,
+  story_id     bigint      references stories (id) on delete set null,
+  answer       jsonb       not null default '[]'::jsonb,
+  probe        jsonb       not null default '[]'::jsonb,
+  duration_ms  int         not null default 0,
+  mic          boolean     not null default false,
+  star         jsonb       not null default '{}'::jsonb,
+  metrics      jsonb,
+  created_at   timestamptz not null default now()
+);
+create index if not exists behavioral_rounds_member_idx on behavioral_rounds (member_id, created_at desc);

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { behavioralDoor } from '@/lib/behavioral';
 import { InterviewError, arenaFor, pickBlind, startExtras, startInterview } from '@/lib/interview';
 import { guardPost, readJson, str } from '@/lib/request';
 import { getSession } from '@/lib/session';
@@ -11,7 +12,8 @@ export async function GET() {
   const session = await getSession();
   if (!session) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
   try {
-    return NextResponse.json({ arena: await arenaFor(session) });
+    const [arena, behavioral] = await Promise.all([arenaFor(session), behavioralDoor(session)]);
+    return NextResponse.json({ arena, behavioral });
   } catch (err) {
     console.error('arena failed', err);
     return NextResponse.json({ error: 'server' }, { status: 500 });

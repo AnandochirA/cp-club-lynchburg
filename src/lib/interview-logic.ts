@@ -112,7 +112,8 @@ const COMPLEXITY = /\bo\s*\(|\bo of\b|big o|log n|n squared|\blinear\b|quadratic
 /** Chrome's recogniser drops most "um"s and "uh"s, so this mostly catches the verbal ones. */
 const FILLER = /\b(um+|uh+|erm|like|basically|actually|literally|you know|kind of|sort of|i guess|so yeah)\b/gi;
 
-const wordCount = (s: string) => (s.match(/\S+/g) ?? []).length;
+export const wordCount = (s: string) => (s.match(/\S+/g) ?? []).length;
+export const fillerCount = (s: string) => s.match(FILLER)?.length ?? 0;
 
 export function transcriptMetrics(d: Draft): Metrics | null {
   if (!d.mic) return null;

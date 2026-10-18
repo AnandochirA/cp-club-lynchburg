@@ -11,7 +11,7 @@ import { TIERS } from '@/lib/hexgrid';
 import type { MemberView } from '@/lib/member-view';
 import { AppBar } from './dash/AppBar';
 import { Ceremony } from './dash/Ceremony';
-import { Arena } from './dash/Arena';
+import { Arena, type BehavioralDoor } from './dash/Arena';
 import { useCalm } from './dash/hooks';
 import { Momentum } from './dash/Momentum';
 import { MyGrid } from './dash/MyGrid';
@@ -44,12 +44,15 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
   const [placing, setPlacing] = useState(initial.placement?.state === 'active');
   const freshTimer = useRef(0);
   const [arena, setArena] = useState<ArenaData | null>(null);
+  const [behavioral, setBehavioral] = useState<BehavioralDoor | null>(null);
 
   // The Arena loads on its own so the rest of the dashboard never waits for it.
   useEffect(() => {
     let live = true;
-    apiGet<{ arena: ArenaData }>('/api/interview').then((res) => {
-      if (live && res.ok) setArena(res.data.arena);
+    apiGet<{ arena: ArenaData; behavioral: BehavioralDoor }>('/api/interview').then((res) => {
+      if (!live || !res.ok) return;
+      setArena(res.data.arena);
+      setBehavioral(res.data.behavioral);
     });
     return () => {
       live = false;
@@ -202,7 +205,7 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
         </div>
 
         <div className="dx" style={{ ['--dx' as string]: 6 }}>
-          <Arena arena={arena} />
+          <Arena arena={arena} behavioral={behavioral} />
         </div>
 
         <div className="dx" style={{ ['--dx' as string]: 7 }}>
