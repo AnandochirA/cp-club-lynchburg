@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Problem } from '@/lib/curriculum';
 import type { InterviewRecord, PostMortem } from '@/lib/interview';
-import { MISTAKES, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C } from '@/lib/interview-kit';
+import { MISTAKES, RUBRIC, SCORE_LABELS, STAGES, interviewCopy as C, patternMatches } from '@/lib/interview-kit';
 import {
   MAX_NEXT_TIME,
   MISTAKE_KEYS,
@@ -132,6 +132,44 @@ export function ReviewPanel({
           )}
         </p>
       </section>
+
+      {(record.mode === 'blind' || d.extras.curveAsked) && (
+        <section className="panel flex flex-col gap-5 p-5 lg:p-7" aria-label={C.blind.pattern}>
+          {record.mode === 'blind' && (
+            <div className="iv-reveal">
+              <div>
+                <span className="font-mono text-[11.5px] tracking-[0.14em] text-dim uppercase">{C.blind.youCalled}</span>
+                <span className="iv-reveal-word font-display caps">{d.extras.pattern.trim() || C.blind.noCall}</span>
+              </div>
+              <div>
+                <span className="font-mono text-[11.5px] tracking-[0.14em] text-dim uppercase">{C.blind.itWas}</span>
+                <span
+                  className="iv-reveal-word font-display caps flex items-center gap-3"
+                  style={{ color: patternMatches(d.extras.pattern, problem.topic) ? 'var(--verdict-ac)' : 'var(--verdict-wa)' }}
+                >
+                  {problem.topic}
+                  {patternMatches(d.extras.pattern, problem.topic) ? (
+                    <Icon name="check" size={26} stroke={3} />
+                  ) : (
+                    <Icon name="close" size={26} stroke={3} />
+                  )}
+                </span>
+              </div>
+            </div>
+          )}
+          {d.extras.curveAsked && (
+            <div className="iv-curve">
+              <span className="font-mono text-[12px] tracking-[0.14em] text-gold uppercase">{C.curveball}</span>
+              <p className="m-0 text-[16px] leading-[1.5] text-text">{d.extras.curveball}</p>
+              {d.extras.curveAnswer.trim() ? (
+                <pre className="iv-pre m-0">{d.extras.curveAnswer}</pre>
+              ) : (
+                <p className="m-0 text-[14px] text-muted">No written answer.</p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
 
       {record.metrics && (
         <section className="panel flex flex-col gap-4 p-5 lg:p-7" aria-labelledby="signals-title">

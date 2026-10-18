@@ -10,7 +10,9 @@ import type { Problem } from '@/lib/curriculum';
 import type { InterviewRecord, PostMortem } from '@/lib/interview';
 import {
   CLOSING,
+  CURVEBALL_AT,
   NUDGES,
+  PATTERN_SUGGESTIONS,
   STAGES,
   STAGE_IDS,
   TOTAL_MINUTES,
@@ -61,11 +63,17 @@ export function InterviewRoom({
   problem,
   resume,
   lastNextTime,
+  autostart = false,
+  startMode = 'practice',
 }: {
   problem: Problem;
   resume: InterviewRecord | null;
   /** Your own "next time I will…" from the last round, read back at the start of this one. */
   lastNextTime: string | null;
+  /** Begin at once (the blind draw already showed the problem). */
+  autostart?: boolean;
+  /** The mode a fresh start asks for. Blind rounds are started by the draw, never here. */
+  startMode?: 'practice' | 'redo';
 }) {
   const [phase, setPhase] = useState<Phase>(resume?.finishedAt ? 'review' : 'intro');
   const [record, setRecord] = useState<InterviewRecord | null>(resume);
@@ -85,6 +93,10 @@ export function InterviewRoom({
   const coachUntil = useRef(0);
   const micRef = useRef(false);
   micRef.current = micOn;
+  const mode = record?.mode ?? startMode;
+  const blind = mode === 'blind';
+  // A blind round's coach must not leak the pattern through topic-specific follow-ups.
+  const coachTopic = blind ? '' : problem.topic;
 
   const update = useCallback((fn: (d: Draft) => Draft) => {
     const next = fn(draftRef.current);
@@ -197,7 +209,7 @@ export function InterviewRoom({
         if (from !== 'review' && from !== id && how !== 'jump' && how !== 'resume') {
           stages[from] = { ...stages[from], done: how === 'done' || stages[from].done, skipped: how === 'skipped' };
         }
-        if (!stages[id].followUp) stages[id] = { ...stages[id], followUp: pick(followUpsFor(id, problem.topic)) };
+        if (!stages[id].followUp) stages[id] = { ...stages[id], followUp: pick(followUpsFor(id, coachTopic)) };
         return { ...x, stage: id, stages };
       });
       // Re-entering a step you already heard does not repeat the whole prompt.
@@ -207,7 +219,7 @@ export function InterviewRoom({
       else coach(`Back to ${stageById(id).title.toLowerCase()}.`);
       void save();
     },
-    [commit, update, coach, save, problem.topic],
+    [commit, update, coach, save, coachTopic],
   );
 
   function toggleMic(on: boolean) {
@@ -222,7 +234,7 @@ export function InterviewRoom({
     let rec = fresh ? null : resume;
     if (!rec) {
       setBusy('start');
-      const res = await apiPost<{ interview: InterviewRecord }>('/api/interview', { slug: problem.slug });
+      const res = await apiPost<{ interview: InterviewRecord }>('/api/interview', { slug: problem.slug, mode: startMode });
       setBusy(null);
       if (!res.ok) return setError(apiErrors[res.error] ?? apiErrors.server);
       rec = res.data.interview;
@@ -234,8 +246,10 @@ export function InterviewRoom({
     setPhase('live');
     if (speech.stt) toggleMic(true);
     const at = rec.draft.stage === 'review' ? 'read' : rec.draft.stage;
-    if (rec !== resume && lastNextTime) coach(lastTimeLine(lastNextTime));
-    enter(at, rec === resume ? 'resume' : 'jump');
+    // A session nobody has spent time in yet (a blind draw lands here) is a fresh start, not a resume.
+    const untouched = STAGE_IDS.every((id) => rec.draft.stages[id].ms === 0);
+    if ((rec !== resume || untouched) && lastNextTime) coach(lastTimeLine(lastNextTime));
+    enter(at, rec === resume && !untouched ? 'resume' : 'jump');
   }
 
   async function finish() {
@@ -306,6 +320,12 @@ export function InterviewRoom({
         return;
       }
     }
+    const x = d.extras;
+    if (id === 'test' && x.curveball && !x.curveAsked && elapsed >= budget * CURVEBALL_AT) {
+      update((v) => ({ ...v, extras: { ...v.extras, curveAsked: true } }));
+      coach(x.curveball);
+      return;
+    }
     if (!s.asked && s.followUp && elapsed >= budget * FOLLOW_UP_AT) {
       update((x) => ({ ...x, stages: { ...x.stages, [id]: { ...x.stages[id], asked: true } } }));
       coach(s.followUp);
@@ -337,6 +357,17 @@ export function InterviewRoom({
     };
   }, [phase, save]);
 
+  // Straight in from the blind draw: start as soon as the browser's speech support is known.
+  const started = useRef(false);
+  useEffect(() => {
+    if (!autostart || !speech.ready || started.current || phase !== 'intro') return;
+    started.current = true;
+    window.history.replaceState(null, '', window.location.pathname);
+    void begin(false);
+    // begin is recreated every render; this must run once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autostart, speech.ready, phase]);
+
   const stageId = draft.stage === 'review' ? null : draft.stage;
   const idx = stageId ? STAGE_IDS.indexOf(stageId) : -1;
   const liveMs = phase === 'live' && live.current.enteredAt ? Math.max(0, now - live.current.enteredAt) : 0;
@@ -360,7 +391,14 @@ export function InterviewRoom({
           <span className="hidden min-w-0 flex-col sm:flex">
             <span className="truncate text-[15px] font-semibold">{problem.title}</span>
             <span className="font-mono text-[11.5px]" style={{ color: diffColor(problem.difficulty) }}>
-              {problem.difficulty.toLowerCase()} · {problem.topic}
+              {problem.difficulty.toLowerCase()} ·{' '}
+              {blind && phase !== 'review' ? (
+                <span className="iv-hidden">
+                  {C.blind.hidden} <b aria-hidden="true" />
+                </span>
+              ) : (
+                problem.topic
+              )}
             </span>
           </span>
         </div>
@@ -424,7 +462,7 @@ export function InterviewRoom({
                 {problem.title}
               </h1>
               <span className="font-mono text-[13px]" style={{ color: diffColor(problem.difficulty) }}>
-                #{problem.id} · {problem.difficulty.toLowerCase()} · {problem.topic}
+                #{problem.id} · {problem.difficulty.toLowerCase()} · {blind ? C.blind.hidden : problem.topic}
               </span>
             </div>
             <p className="m-0 max-w-[64ch] text-[16.5px] leading-[1.55] text-soft">{C.introLead}</p>
@@ -469,7 +507,7 @@ export function InterviewRoom({
             <h1 className="sr-only">
               {C.title}: {problem.title}
             </h1>
-            <StageRail draft={draft} liveMs={liveMs} onPick={(id) => id !== stageId && enter(id)} />
+            <StageRail draft={draft} liveMs={liveMs} locked={blind} onPick={(id) => id !== stageId && enter(id)} />
             <div className="grid grid-cols-[minmax(0,1fr)] gap-4 xl:grid-cols-12 xl:gap-5">
               <div className="xl:col-span-8">
                 <StagePanel
@@ -477,7 +515,8 @@ export function InterviewRoom({
                   stage={stageById(stageId)}
                   index={idx}
                   state={draft.stages[stageId]}
-                  checklist={checklistFor(stageId, problem.topic)}
+                  checklist={checklistFor(stageId, problem.topic, blind)}
+                  canSkip={!blind}
                   coachLine={lastCoach?.text ?? stageById(stageId).prompt}
                   speaking={speech.speaking}
                   elapsedMs={draft.stages[stageId].ms + liveMs}
@@ -495,7 +534,44 @@ export function InterviewRoom({
                   }
                   onNext={() => (idx === STAGE_IDS.length - 1 ? void finish() : enter(STAGE_IDS[idx + 1], 'done'))}
                   onSkip={() => enter(STAGE_IDS[idx + 1], 'skipped')}
-                />
+                >
+                  {blind && stageId === 'approach' && (
+                    <label className="flex flex-col gap-2">
+                      <span className="font-mono text-[12px] tracking-[0.1em] text-dim uppercase">{C.blind.pattern}</span>
+                      <input
+                        type="text"
+                        list="iv-patterns"
+                        className="iv-input"
+                        maxLength={80}
+                        value={draft.extras.pattern}
+                        placeholder={C.blind.patternPlaceholder}
+                        onChange={(e) => update((v) => ({ ...v, extras: { ...v.extras, pattern: e.target.value } }))}
+                      />
+                      <datalist id="iv-patterns">
+                        {PATTERN_SUGGESTIONS.map((p) => (
+                          <option key={p} value={p} />
+                        ))}
+                      </datalist>
+                      <span className="text-[13px] text-dim">{C.blind.patternNote}</span>
+                    </label>
+                  )}
+                  {stageId === 'test' && draft.extras.curveAsked && (
+                    <div className="iv-curve">
+                      <span className="font-mono text-[12px] tracking-[0.14em] text-gold uppercase">{C.curveball}</span>
+                      <p className="m-0 text-[16.5px] leading-[1.5] text-text">{draft.extras.curveball}</p>
+                      <textarea
+                        className="iv-notes"
+                        rows={4}
+                        maxLength={2000}
+                        value={draft.extras.curveAnswer}
+                        placeholder={C.curveballPlaceholder}
+                        onChange={(e) => update((v) => ({ ...v, extras: { ...v.extras, curveAnswer: e.target.value } }))}
+                        aria-label={C.yourAnswer}
+                      />
+                      <span className="text-[13px] text-dim">{C.curveballNote}</span>
+                    </div>
+                  )}
+                </StagePanel>
               </div>
               <aside className="panel flex flex-col gap-3 p-5 xl:col-span-4" aria-label={C.transcript}>
                 <div className="flex items-center justify-between gap-3">

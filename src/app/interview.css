@@ -661,3 +661,282 @@
     text-shadow: 0 0 22px rgba(255, 92, 119, 0.55);
   }
 }
+
+/* ============================================================ the blind draw */
+.bd-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 40px;
+  align-items: center;
+  min-height: calc(100dvh - 160px);
+}
+@media (min-width: 1024px) {
+  .bd-stage {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 56px;
+  }
+}
+.bd-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 18px;
+}
+.bd-title {
+  font-size: clamp(72px, 14vw, 156px);
+  font-weight: 900;
+  line-height: 0.8;
+  letter-spacing: -0.005em;
+}
+.bd-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bd-rules li {
+  padding: 6px 12px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-soft);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+.bd-rules li::before {
+  content: '× ';
+  color: var(--color-crimson-hi);
+}
+
+.bd-table {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 460px;
+  perspective: 1400px;
+}
+.bd-deck {
+  position: relative;
+  width: min(78vw, 300px);
+  aspect-ratio: 5 / 7;
+}
+.bd-card {
+  position: absolute;
+  inset: 0;
+  z-index: var(--k);
+  transform-style: preserve-3d;
+  rotate: calc((var(--k) - 2) * 2.2deg);
+  translate: calc((var(--k) - 2) * 3px) calc((2 - var(--k)) * 3px);
+  transition:
+    transform 0.9s var(--ease-out-expo),
+    rotate 0.6s var(--ease-out-expo),
+    translate 0.6s var(--ease-out-expo),
+    opacity 0.6s;
+}
+.bd-back,
+.bd-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+}
+.bd-back {
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.16), transparent 55%),
+    repeating-linear-gradient(60deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 14px),
+    repeating-linear-gradient(-60deg, rgba(0, 0, 0, 0.16) 0 2px, transparent 2px 14px),
+    linear-gradient(160deg, #ff1747, #a3001e);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+.bd-back-mark {
+  display: grid;
+  place-items: center;
+  width: 96px;
+  height: 108px;
+  font-size: 64px;
+  font-weight: 900;
+  color: #fff;
+  clip-path: var(--hex);
+  background: rgba(11, 12, 16, 0.55);
+}
+.bd-face {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 30px 24px 24px;
+  color: var(--color-ink-text);
+  background: var(--color-paper);
+  transform: rotateY(180deg);
+}
+.bd-face-band {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 8px;
+  background: var(--band);
+}
+.bd-face-title {
+  font-size: clamp(34px, 7vw, 46px);
+  font-weight: 900;
+  line-height: 0.88;
+  overflow-wrap: anywhere;
+}
+/* the redacted topic: a black bar where the topic would be */
+.bd-redact {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: auto;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--color-ink-muted);
+}
+.bd-redact b {
+  flex: 1;
+  height: 22px;
+  background: repeating-linear-gradient(-45deg, #121317 0 8px, #24252c 8px 10px);
+}
+
+/* shuffle: the deck riffles while the server draws */
+.bd-stage[data-phase='shuffle'] .bd-card {
+  animation: bd-riffle 0.46s ease-in-out infinite alternate;
+  animation-delay: calc(var(--k) * -0.09s);
+}
+.bd-stage[data-phase='shuffle'] .bd-card:nth-child(even) {
+  animation-name: bd-riffle-r;
+}
+@keyframes bd-riffle {
+  to {
+    translate: -38% -2%;
+    rotate: -9deg;
+  }
+}
+@keyframes bd-riffle-r {
+  to {
+    translate: 38% 2%;
+    rotate: 9deg;
+  }
+}
+
+/* reveal: the top card lifts and flips; the rest of the deck sinks away */
+.bd-stage[data-phase='reveal'] .bd-card,
+.bd-stage[data-phase='count'] .bd-card {
+  opacity: 0;
+  translate: 0 40px;
+}
+.bd-stage[data-phase='reveal'] .bd-card:last-child,
+.bd-stage[data-phase='count'] .bd-card:last-child {
+  opacity: 1;
+  rotate: 0deg;
+  translate: 0 0;
+  /* no filter or opacity here: either would flatten the 3D flip */
+  transform: rotateY(180deg) scale(1.06);
+}
+.bd-stage[data-phase='count'] .bd-card:last-child {
+  transform: rotateY(180deg) scale(0.92);
+}
+.bd-face {
+  transition: opacity 0.5s;
+}
+.bd-stage[data-phase='count'] .bd-face {
+  opacity: 0.4;
+}
+
+.bd-count {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  pointer-events: none;
+}
+.bd-count-n {
+  font-size: clamp(160px, 30vw, 260px);
+  font-weight: 900;
+  line-height: 0.8;
+  color: #fff;
+  text-shadow: 0 0 60px color-mix(in srgb, var(--tier) 70%, transparent);
+  animation: iv-count 0.85s cubic-bezier(0.2, 0.9, 0.25, 1.2) both;
+}
+@keyframes iv-count {
+  0% {
+    opacity: 0;
+    scale: 2.2;
+  }
+  30% {
+    opacity: 1;
+    scale: 1;
+  }
+  100% {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+/* the redacted topic in the room's header during a blind round */
+.iv-hidden {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.iv-hidden b {
+  display: inline-block;
+  width: 64px;
+  height: 10px;
+  background: repeating-linear-gradient(-45deg, #2a2b33 0 6px, #3a3b46 6px 8px);
+}
+
+/* blind pattern reveal on the review */
+.iv-reveal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+@media (min-width: 640px) {
+  .iv-reveal {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+.iv-reveal > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 18px 20px;
+  background: #101116;
+}
+.iv-reveal > div:last-child {
+  animation: iv-flip 0.8s var(--ease-out-expo) 0.5s backwards;
+  transform-origin: left center;
+}
+@keyframes iv-flip {
+  from {
+    opacity: 0;
+    transform: perspective(800px) rotateY(-80deg);
+  }
+}
+.iv-reveal-word {
+  font-size: 34px;
+  font-weight: 900;
+  line-height: 0.9;
+}
+.iv-curve {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid rgba(246, 196, 83, 0.4);
+  background: rgba(246, 196, 83, 0.06);
+  animation: iv-rise 0.6s var(--ease-out-expo) backwards;
+}
+.iv-rail[data-locked] .iv-step {
+  cursor: default;
+}
+.iv-rail[data-locked] .iv-step:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+.iv-rail[data-locked] .iv-step[data-state='current']:hover {
+  background: color-mix(in srgb, var(--tier) 12%, transparent);
+}

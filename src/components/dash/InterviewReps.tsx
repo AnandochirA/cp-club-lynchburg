@@ -48,7 +48,12 @@ export function InterviewReps() {
             {C.title}
           </h2>
         </div>
-        {rounds.length > 0 && <span className="font-mono text-[13px] text-white/55">{C.sessions(rounds.length)}</span>}
+        <div className="flex items-center gap-4">
+          {rounds.length > 0 && <span className="font-mono text-[13px] text-white/55">{C.sessions(rounds.length)}</span>}
+          <Link href="/interview/draw" className="bar-btn primary no-underline">
+            {interviewCopy.blind.title}
+          </Link>
+        </div>
       </div>
 
       {rounds.length === 0 ? (

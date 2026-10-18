@@ -304,9 +304,119 @@ export function followUpsFor(stage: StageId, topic: string): string[] {
   return stage === 'test' ? [...base, ...fam, ...GENERIC_FOLLOW_UPS] : [...base, ...fam];
 }
 
-export function checklistFor(stage: StageId, topic: string): string[] {
-  return stage === 'edges' ? edgeCasesFor(topic) : stageById(stage).checklist;
+/**
+ * The checklist for a stage. Blind rounds get a generic edge-case list, since
+ * a topic-specific one ("null root") would give the pattern away.
+ */
+export function checklistFor(stage: StageId, topic: string, blind = false): string[] {
+  if (stage !== 'edges') return stageById(stage).checklist;
+  return blind ? BLIND_EDGES : edgeCasesFor(topic);
 }
+
+const BLIND_EDGES = [
+  'Empty input, or a single element',
+  'All values equal, or many duplicates',
+  'Negative numbers and zero',
+  'Already sorted, or reverse sorted',
+  'No valid answer at all',
+  'Values big enough to overflow',
+  'Largest possible input (does it still run in time?)',
+];
+
+// ---------------------------------------------------------- blind pattern call
+
+/** Extra ways people name a pattern out loud ("DFS", "memoization") on top of the topic words. */
+const SYNONYMS: [RegExp, Family[]][] = [
+  [/\bdfs\b|\bbfs\b|depth.first|breadth.first/, ['graph', 'tree']],
+  [/union.?find|disjoint set|topolog|dijkstra|shortest path|\bgrid\b|island|matrix/, ['graph']],
+  [/memo|\bdp\b|tabulat|knapsack/, ['dp']],
+  [/priority queue|top.?k|kth (largest|smallest)/, ['heap']],
+  [/monotonic/, ['stack']],
+  [/prefix sum|kadane|\bsort/, ['array']],
+  [/recurs|permutation|subset|combination|n.?queens/, ['backtracking']],
+  [/prefix tree/, ['trie']],
+  [/sweep|merge interval|meeting room|overlap/, ['intervals']],
+  [/\bxor\b|bitmask|modulo/, ['bits']],
+  [/\blru\b|\bcache\b|iterator/, ['design']],
+  [/two.?pointer|fast.?(and.?)?slow|tortoise/, ['twoPointers', 'linkedList']],
+  [/sliding|window/, ['window']],
+  [/hash|\bmap\b|\bset\b|dictionary|counter|frequenc/, ['hashing']],
+  [/\bbst\b|binary tree|\btree\b/, ['tree']],
+];
+
+/** Did the pattern you named in a blind round match the problem's real topic? */
+export function patternMatches(call: string, topic: string): boolean {
+  const c = call.toLowerCase();
+  if (!c.trim()) return false;
+  const named = new Set([...topicFamilies(c), ...SYNONYMS.filter(([re]) => re.test(c)).flatMap(([, f]) => f)]);
+  return topicFamilies(topic).some((f) => named.has(f));
+}
+
+/** Offered as you type the pattern. Plain names, no hints about this problem. */
+export const PATTERN_SUGGESTIONS = [
+  'Hash map',
+  'Two pointers',
+  'Sliding window',
+  'Stack (monotonic)',
+  'Binary search',
+  'Linked list (fast & slow)',
+  'Tree DFS / BFS',
+  'Trie',
+  'Heap / priority queue',
+  'Intervals (sort + sweep)',
+  'Backtracking',
+  'Graph BFS / DFS',
+  'Union-find',
+  'Dynamic programming',
+  'Greedy',
+  'Bit manipulation',
+  'Design',
+];
+
+// ------------------------------------------------------------------ curveballs
+
+/** Thrown once during Test & optimize: the problem changes under you, the way real follow-ups do. */
+const CURVEBALLS: Record<Family, string[]> = {
+  array: [
+    "Twist: the array no longer fits in memory. It's streamed to you one number at a time. What changes?",
+    "Twist: no extra memory allowed at all. How do you adapt?",
+  ],
+  hashing: ["Twist: memory is capped at a few kilobytes, so the hash map is off the table. What now?"],
+  twoPointers: ['Twist: the input is no longer sorted. Does two pointers still work? What would you do?'],
+  window: ['Twist: the input is now an endless stream, and you must answer after every element. Adapt your window.'],
+  stack: ['Twist: the input arrives as a stream, and you must report an answer after each element. What changes?'],
+  binarySearch: ['Twist: the sorted array has been rotated at an unknown point. How does your search change?'],
+  linkedList: ['Twist: the list might now contain a cycle. How do you make your solution safe?'],
+  tree: ['Twist: the tree is a million levels deep, and your recursion will overflow the stack. Make it iterative.'],
+  trie: ['Twist: the dictionary now has ten million words. How do you cut the memory?'],
+  heap: ['Twist: the data is now an endless stream, and I can ask for the answer at any moment.'],
+  intervals: ['Twist: intervals now arrive one at a time, and you answer after each one.'],
+  backtracking: ['Twist: I only want the number of answers, not the answers. Can you beat listing them all?'],
+  graph: [
+    'Twist: the graph is too big for one machine. How would you split the work?',
+    'Twist: every edge now has a weight. What changes in your approach?',
+  ],
+  dp: [
+    'Twist: memory is tight. Can you get it down to one row, or a couple of variables?',
+    'Twist: now I want the actual solution path, not just the number.',
+  ],
+  greedy: ['Twist: every item now has a weight as well. Does the greedy choice still hold?'],
+  bits: ["Twist: inputs are now 64-bit, and you can't use a big-integer library."],
+  design: ['Twist: many threads now call your structure at the same time. What breaks, and how do you fix it?'],
+};
+
+const GENERIC_CURVEBALLS = [
+  'Twist: the input is now a hundred times bigger and must run in under a second. Does your solution survive?',
+  'Twist: duplicates are now allowed. What breaks?',
+  'Twist: return every valid answer, not just one.',
+];
+
+export function curveballsFor(topic: string): string[] {
+  return [...topicFamilies(topic).flatMap((f) => CURVEBALLS[f]), ...GENERIC_CURVEBALLS];
+}
+
+/** The share of the Test budget at which the curveball comes. */
+export const CURVEBALL_AT = 0.25;
 
 // --------------------------------------------------------------- review
 
@@ -447,6 +557,28 @@ export const interviewCopy = {
     recent: 'Recent rounds',
     sessions: (n: number) => `${n} ${n === 1 ? 'round' : 'rounds'}`,
   },
+  blind: {
+    eyebrow: 'Blind draw',
+    title: 'Draw blind',
+    lead: 'A random problem you haven’t solved, at your rank or one above. The topic stays hidden, there is no skipping, and the clock never stops. Just like the real thing.',
+    draw: 'Draw a problem',
+    drawing: 'Shuffling…',
+    hidden: 'Topic hidden',
+    yourProblem: 'Your problem',
+    startsIn: 'Clock starts in',
+    announce: (title: string) => `Your problem is ${title}. The topic is hidden. Clock starts now.`,
+    pattern: 'Name the pattern',
+    patternNote: 'Say it out loud too. It’s revealed in the review.',
+    patternPlaceholder: 'e.g. sliding window',
+    youCalled: 'You called',
+    itWas: 'It was',
+    noCall: 'No call',
+    rules: ['Topic hidden', 'No skipping', 'No going back', 'A curveball is coming'],
+  },
+  curveball: 'Curveball',
+  curveballNote: 'Answer out loud first, then jot down how you would adapt.',
+  curveballPlaceholder: 'How I would change the approach…',
+  yourAnswer: 'Your answer',
   mock: 'Mock',
   mockLabel: (title: string) => `Practice ${title} as a mock interview`,
   practice: 'Practice as interview',

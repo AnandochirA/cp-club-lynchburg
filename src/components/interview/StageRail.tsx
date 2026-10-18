@@ -13,16 +13,19 @@ import { Icon } from '../icons';
 export function StageRail({
   draft,
   liveMs,
+  locked = false,
   onPick,
 }: {
   draft: Draft;
   /** Time on the current step that has not been folded into the draft yet. */
   liveMs: number;
+  /** Blind rounds: no jumping around, the rail is only a map. */
+  locked?: boolean;
   onPick: (id: StageId) => void;
 }) {
   return (
     <nav aria-label="Interview steps">
-      <ol className="iv-rail m-0 list-none p-0">
+      <ol className="iv-rail m-0 list-none p-0" data-locked={locked ? '1' : undefined}>
         {STAGES.map((s, i) => {
           const st = draft.stages[s.id];
           const current = draft.stage === s.id;
@@ -36,7 +39,8 @@ export function StageRail({
                 className="iv-step"
                 data-state={state}
                 aria-current={current ? 'step' : undefined}
-                onClick={() => onPick(s.id)}
+                disabled={locked && !current}
+                onClick={() => !locked && onPick(s.id)}
               >
                 <span className="iv-step-dot" aria-hidden="true">
                   {state === 'done' ? <Icon name="check" size={12} stroke={3.2} /> : i + 1}

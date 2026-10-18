@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { InterviewError, listInterviews, startInterview } from '@/lib/interview';
-import { emptyExtras } from '@/lib/interview-logic';
+import { InterviewError, listInterviews, pickBlind, startExtras, startInterview } from '@/lib/interview';
 import { guardPost, readJson, str } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
@@ -19,7 +18,10 @@ export async function GET() {
   }
 }
 
-/** POST { slug, mode? }: start a mock interview on a ladder problem. */
+/**
+ * POST { slug, mode? }: start a mock interview on a ladder problem.
+ * POST { mode: 'blind' }: the server draws the problem; any slug sent is ignored.
+ */
 export async function POST(req: Request) {
   const refused = guardPost(req);
   if (refused) return refused;
@@ -27,8 +29,9 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
   const body = await readJson(req);
   try {
-    const mode = body?.mode === 'redo' ? 'redo' : 'practice';
-    const interview = await startInterview(session, str(body?.slug, 120), mode, emptyExtras());
+    const mode = body?.mode === 'blind' ? 'blind' : body?.mode === 'redo' ? 'redo' : 'practice';
+    const slug = mode === 'blind' ? await pickBlind(session) : str(body?.slug, 120);
+    const interview = await startInterview(session, slug, mode, startExtras(slug, mode));
     return NextResponse.json({ interview });
   } catch (err) {
     if (err instanceof InterviewError) {

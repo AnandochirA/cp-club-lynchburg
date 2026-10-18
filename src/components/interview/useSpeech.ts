@@ -50,6 +50,8 @@ export function useSpeech({
   /** Any recognition activity at all (interim words included): you are talking. */
   onHeard: () => void;
 }) {
+  /** False until the browser's support has been checked (it can't be known on the server). */
+  const [ready, setReady] = useState(false);
   const [stt, setStt] = useState(false);
   const [tts, setTts] = useState(false);
   const [listening, setListening] = useState(false);
@@ -70,6 +72,7 @@ export function useSpeech({
   useEffect(() => {
     setStt(recognitionCtor() !== null);
     setTts(typeof window !== 'undefined' && 'speechSynthesis' in window);
+    setReady(true);
     // Some browsers load voices late; asking once warms the list.
     if ('speechSynthesis' in window) window.speechSynthesis.getVoices();
     return () => {
@@ -177,5 +180,5 @@ export function useSpeech({
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
   }, []);
 
-  return { stt, tts, listening, speaking, interim, denied, voiceOn, setVoiceOn, listen, say, hush };
+  return { ready, stt, tts, listening, speaking, interim, denied, voiceOn, setVoiceOn, listen, say, hush };
 }

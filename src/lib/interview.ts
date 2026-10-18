@@ -1,12 +1,16 @@
 import 'server-only';
+import { RANK_KEYS, curriculum } from '@/lib/curriculum';
 import { db } from '@/lib/db';
+import { curveballsFor } from '@/lib/interview-kit';
 import {
   RESUME_HOURS,
   MAX_NEXT_TIME,
   STARTS_PER_DAY,
   cleanDraft,
   emptyDraft,
+  emptyExtras,
   findProblem,
+  pick,
   talkStats,
   transcriptMetrics,
   type Draft,
@@ -17,6 +21,7 @@ import {
   type Scores,
   type TalkStats,
 } from '@/lib/interview-logic';
+import { rankIndex } from '@/lib/progress';
 import type { Session } from '@/lib/session';
 
 /** One mock interview, as the browser sees it. */
@@ -117,6 +122,47 @@ export async function startInterview(session: Session, slug: string, mode: Mode,
     returning *
   `) as Row[];
   return toRecord(rows[0]);
+}
+
+/** Blind draws: mostly Mediums, sometimes a Hard, like a real loop. */
+const HARD_SHARE = 0.2;
+const BLIND_FRESH_DAYS = 30;
+
+/**
+ * Pick a blind problem on the server, so the browser never sees the pool.
+ * Unsolved, not practiced in the last 30 days, from your rank's set or the
+ * one above. Each filter is dropped in turn if it would leave nothing.
+ */
+export async function pickBlind(session: Session): Promise<string> {
+  const sql = db();
+  const [solvedRows, recentRows] = (await Promise.all([
+    sql`select distinct slug from ac_events where member_id = ${session.member.id} and revoked_at is null`,
+    sql`
+      select distinct slug from interview_sessions
+      where member_id = ${session.member.id} and started_at > now() - ${`${BLIND_FRESH_DAYS} days`}::interval
+    `,
+  ])) as { slug: string }[][];
+  const solved = new Set(solvedRows.map((r) => r.slug));
+  const recent = new Set(recentRows.map((r) => r.slug));
+  const reach = RANK_KEYS.slice(0, Math.min(rankIndex(session.member.rank) + 2, RANK_KEYS.length));
+  const all = reach.flatMap((k) => curriculum[k]);
+  const pools = [
+    all.filter((p) => !solved.has(p.slug) && !recent.has(p.slug)),
+    all.filter((p) => !recent.has(p.slug)),
+    all,
+  ];
+  const pool = pools.find((p) => p.length > 0)!;
+  const want = Math.random() < HARD_SHARE ? 'Hard' : 'Medium';
+  const fit = pool.filter((p) => p.difficulty === want);
+  return pick(fit.length ? fit : pool).slug;
+}
+
+/** Blind rounds always get a curveball; the others get one about half the time. */
+export function startExtras(slug: string, mode: Mode) {
+  const x = emptyExtras();
+  const p = findProblem(slug);
+  if (p && (mode === 'blind' || Math.random() < 0.5)) x.curveball = pick(curveballsFor(p.topic));
+  return x;
 }
 
 /** The "next time I will…" line from the member's latest round that has one. */

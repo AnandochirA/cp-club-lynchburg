@@ -14,8 +14,15 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 }
 
 /** A mock interview on one ladder problem. Any problem on the ladder, at any rank: practice is not gated. */
-export default async function InterviewPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function InterviewPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const problem = findProblem((await params).slug);
+  const q = await searchParams;
   if (!problem) notFound();
 
   const session = await getSession();
@@ -24,7 +31,15 @@ export default async function InterviewPage({ params }: { params: Promise<{ slug
   const [resume, nextTime] = await Promise.all([findResumable(session, problem.slug), lastNextTime(session)]);
   return (
     <main>
-      <InterviewRoom key={resume?.id ?? 'new'} problem={problem} resume={resume} lastNextTime={nextTime} />
+      <InterviewRoom
+        key={resume?.id ?? 'new'}
+        problem={problem}
+        resume={resume}
+        lastNextTime={nextTime}
+        // ?go=1: straight in from the blind draw. ?mode=redo: a retry from the redo queue.
+        autostart={q.go === '1' && !!resume}
+        startMode={q.mode === 'redo' ? 'redo' : 'practice'}
+      />
     </main>
   );
 }

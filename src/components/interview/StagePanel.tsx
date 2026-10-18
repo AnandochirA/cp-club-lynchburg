@@ -25,6 +25,8 @@ export function StagePanel({
   onToggle,
   onNext,
   onSkip,
+  canSkip = true,
+  children,
 }: {
   stage: Stage;
   index: number;
@@ -41,6 +43,10 @@ export function StagePanel({
   onToggle: (i: number) => void;
   onNext: () => void;
   onSkip: () => void;
+  /** Blind rounds take this away. */
+  canSkip?: boolean;
+  /** Extra controls for this step (the blind pattern call, the curveball). */
+  children?: React.ReactNode;
 }) {
   const budget = stage.minutes * 60_000;
   const over = elapsedMs > budget;
@@ -98,6 +104,8 @@ export function StagePanel({
         </blockquote>
       </figure>
 
+      {children}
+
       {showLeetCode && (
         <a
           href={`https://leetcode.com/problems/${problem.slug}/`}
@@ -150,7 +158,7 @@ export function StagePanel({
           {isLast ? (busy ? C.finishing : C.finish) : C.next}
           <Icon name="arrow" size={17} stroke={2.2} className="arrow" />
         </button>
-        {!isLast && (
+        {!isLast && canSkip && (
           <button type="button" onClick={onSkip} disabled={busy} className="iv-link">
             {C.skip}
           </button>
