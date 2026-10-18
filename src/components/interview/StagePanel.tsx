@@ -62,7 +62,8 @@ export function StagePanel({
   // The last two minutes of a step: the clock starts to pulse.
   const pressure = !over && budget - elapsedMs <= 120_000;
   const pct = Math.min(100, (elapsedMs / budget) * 100);
-  const showLeetCode = stage.id === 'read' || stage.id === 'code';
+  // The statement is on this page now; LeetCode is only needed to write and submit the code.
+  const showLeetCode = stage.id === 'code';
 
   return (
     <section className="panel flex flex-col gap-5 p-5 lg:p-7" aria-labelledby="stage-title">

@@ -28,9 +28,9 @@ export const STAGES: Stage[] = [
     id: 'read',
     title: 'Read & restate',
     minutes: 3,
-    goal: 'Read the problem on LeetCode, then say it back in your own words.',
+    goal: 'Read the problem (it’s in the Problem panel), then say it back in your own words.',
     prompt:
-      "Let's start. Open the problem and read it carefully. Then tell me, in your own words, what we're solving: what goes in, what comes out, and what the constraints are.",
+      "Let's start. Read the problem carefully. Then tell me, in your own words, what we're solving: what goes in, what comes out, and what the constraints are.",
     followUps: [
       'Look at the constraints. How big can the input get, and what does that tell you about the time complexity we need?',
     ],
@@ -450,7 +450,7 @@ export const PERSONAS: Record<
     voice: 'onyx',
     voiceStyle: 'Flat, neutral and unreadable. Short sentences, slow, no warmth at all.',
     rate: 0.95,
-    ai: 'You are neutral and unreadable. Use as few words as possible. Never praise, never reassure, never say "good" or "great". Answer clarifying questions with the bare fact.',
+    ai: 'You are neutral and unreadable. Every reply is at most ten words. Never praise, never reassure, never say "good" or "great". Answer clarifying questions with the bare fact and nothing else. Push back only on clear errors, in a few flat words.',
   },
   interrupter: {
     name: 'The Interrupter',
@@ -727,6 +727,13 @@ export const interviewCopy = {
     itWas: 'It was',
     noCall: 'No call',
     rules: ['Topic hidden', 'No skipping', 'No going back', 'A curveball is coming'],
+  },
+  statement: {
+    tab: 'Problem',
+    source: 'Open on LeetCode',
+    loading: 'Loading the problem…',
+    paid: 'This is a LeetCode Premium problem, so its statement can only be read there. Open it on LeetCode.',
+    missing: 'Couldn’t load this problem’s statement. Read it on LeetCode for now.',
   },
   film: {
     title: 'Game film',

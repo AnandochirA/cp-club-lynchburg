@@ -50,6 +50,7 @@ import {
 } from '@/lib/interview-logic';
 import { AI_LIMITS, CHECK_STAGES, isQuestion, type TurnReply, type TurnTrigger } from '@/lib/interviewer-logic';
 import { Icon } from '../icons';
+import { ProblemStatement } from './ProblemStatement';
 import { ReviewPanel } from './ReviewPanel';
 import { StagePanel } from './StagePanel';
 import { StageRail } from './StageRail';
@@ -104,6 +105,8 @@ export function InterviewRoom({
   const [thinking, setThinking] = useState(false);
   const [aiNote, setAiNote] = useState<string | null>(null);
   const [ask, setAsk] = useState('');
+  // The side column: the statement while you work through the steps, or the transcript.
+  const [side, setSide] = useState<'problem' | 'transcript'>('problem');
 
   const draftRef = useRef(draft);
   const dirty = useRef(false);
@@ -822,9 +825,15 @@ export function InterviewRoom({
                   )}
                 </StagePanel>
               </div>
-              <aside className="panel flex flex-col gap-3 p-5 xl:col-span-4" aria-label={C.transcript}>
+              <aside className="panel iv-side flex flex-col gap-3 p-5 xl:col-span-4" aria-label={side === 'problem' ? C.statement.tab : C.transcript}>
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="font-display caps m-0 text-[26px] leading-[0.95] font-black">{C.transcript}</h2>
+                  <div role="tablist" aria-label="Side panel" className="iv-tabs">
+                    {(['problem', 'transcript'] as const).map((t) => (
+                      <button key={t} type="button" role="tab" aria-selected={side === t} onClick={() => setSide(t)} className="font-display caps">
+                        {t === 'problem' ? C.statement.tab : C.transcript}
+                      </button>
+                    ))}
+                  </div>
                   {micOn && (
                     <span className="iv-meter font-mono" data-quiet={quietS >= 15 ? '1' : undefined} role="status">
                       <i aria-hidden="true" />
@@ -833,8 +842,14 @@ export function InterviewRoom({
                   )}
                 </div>
                 {speech.denied && <p className="notice">{C.micDenied}</p>}
-                {!speech.stt && <p className="m-0 text-[13.5px] leading-[1.5] text-muted">{C.noStt}</p>}
-                <Transcript lines={draft.transcript} interim={speech.interim} full={full} live />
+                {/* Both stay mounted so switching tabs never refetches the statement or loses the transcript's scroll. */}
+                <div className="iv-side-body" hidden={side !== 'problem'}>
+                  <ProblemStatement slug={problem.slug} />
+                </div>
+                <div className="iv-side-body" hidden={side !== 'transcript'}>
+                  {!speech.stt && <p className="m-0 mb-3 text-[13.5px] leading-[1.5] text-muted">{C.noStt}</p>}
+                  <Transcript lines={draft.transcript} interim={speech.interim} full={full} live />
+                </div>
               </aside>
             </div>
           </>

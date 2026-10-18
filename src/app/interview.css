@@ -1703,3 +1703,153 @@ a.door:hover {
   font-size: 12px;
   color: var(--mc);
 }
+
+/* =============================================== the problem, on this page */
+@media (min-width: 1280px) {
+  /* the side column stays in view while you scroll your notes */
+  .iv-side {
+    position: sticky;
+    top: 76px;
+    align-self: start;
+    max-height: calc(100dvh - 96px);
+  }
+  .iv-side-body {
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .iv-side .iv-transcript[data-live] {
+    max-height: none;
+  }
+}
+.iv-side-body[hidden] {
+  display: none;
+}
+.iv-tabs {
+  display: flex;
+  gap: 18px;
+}
+.iv-tabs button {
+  position: relative;
+  padding: 0 0 6px;
+  font-size: 24px;
+  font-weight: 900;
+  line-height: 0.95;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  transition: color 0.2s;
+}
+.iv-tabs button:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+.iv-tabs button[aria-selected='true'] {
+  color: var(--color-text);
+}
+.iv-tabs button[aria-selected='true']::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  height: 3px;
+  background: var(--tier);
+}
+.iv-tabs button:focus-visible {
+  outline: 2px solid var(--tier);
+  outline-offset: 4px;
+}
+
+/* LeetCode's statement, set in the site's type */
+.iv-statement {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--color-soft);
+  overflow-wrap: anywhere;
+}
+.iv-statement > :first-child {
+  margin-top: 0;
+}
+.iv-statement p {
+  margin: 0 0 12px;
+}
+.iv-statement strong,
+.iv-statement b {
+  font-weight: 650;
+  color: var(--color-text);
+}
+.iv-statement code {
+  padding: 1px 5px;
+  font: 0.88em var(--font-mono);
+  color: #ffd9a0;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.iv-statement pre {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  overflow-x: auto;
+  font: 13px/1.6 var(--font-mono);
+  white-space: pre-wrap;
+  color: var(--color-soft);
+  background: rgba(0, 0, 0, 0.32);
+  border-left: 3px solid var(--tier);
+}
+.iv-statement pre strong {
+  color: var(--color-text);
+}
+.iv-statement ul,
+.iv-statement ol {
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+.iv-statement li {
+  margin-bottom: 4px;
+}
+.iv-statement li code {
+  color: var(--color-soft);
+}
+.iv-statement img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 8px 0 14px;
+  background: #fff;
+}
+.iv-statement table {
+  margin: 0 0 14px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.iv-statement th,
+.iv-statement td {
+  padding: 4px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.iv-statement sup {
+  font-size: 0.72em;
+}
+.iv-statement-skel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.iv-statement-skel i {
+  height: 12px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.05));
+  background-size: 200% 100%;
+  animation: iv-skel 1.4s linear infinite;
+}
+.iv-statement-skel i:nth-child(2) {
+  width: 86%;
+}
+.iv-statement-skel i:nth-child(3) {
+  width: 92%;
+}
+.iv-statement-skel i:nth-child(4) {
+  width: 60%;
+}
+@keyframes iv-skel {
+  to {
+    background-position: -200% 0;
+  }
+}

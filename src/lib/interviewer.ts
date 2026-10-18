@@ -5,6 +5,7 @@ import { PERSONAS, STAGES, stageById, type PersonaKey, type StageId } from '@/li
 import { clock, findProblem, type Draft, type Metrics, type TalkStats } from '@/lib/interview-logic';
 import { AI_LIMITS, type AiBrief, type AiDebrief, type TurnReply, type TurnTrigger } from '@/lib/interviewer-logic';
 import { aiConfigured, speech, structured, textModel, type Usage } from '@/lib/openai';
+import { cachedStatementText } from '@/lib/statement';
 import type { Session } from '@/lib/session';
 
 /**
@@ -71,6 +72,7 @@ export async function briefFor(p: Problem, roundId: number): Promise<AiBrief> {
   const sql = db();
   const rows = (await sql`select brief from ai_briefs where slug = ${p.slug}`) as { brief: AiBrief }[];
   if (rows[0]) return rows[0].brief;
+  const statement = await cachedStatementText(p.slug);
   const { value, usage } = await structured<AiBrief>({
     name: 'interviewer_brief',
     schema: BRIEF_SCHEMA,
@@ -82,7 +84,9 @@ export async function briefFor(p: Problem, roundId: number): Promise<AiBrief> {
       'summary: the problem in two plain sentences. keyConstraints: the real input limits and guarantees. ' +
       'clarifications: 4-6 details a strong candidate should ask about (empty input, duplicates, sortedness, output format, ties, value ranges), each with the answer you will give, true to the problem. ' +
       'edgeCases: 4-7 cases that break careless solutions. bruteForce and optimal: approach in one or two sentences, with time and space in big-O. pitfalls: 3-5 common mistakes candidates make on this problem.',
-    input: `LeetCode #${p.id} "${p.title}" (leetcode.com/problems/${p.slug}), ${p.difficulty}, topic: ${p.topic}.`,
+    input: `LeetCode #${p.id} "${p.title}" (leetcode.com/problems/${p.slug}), ${p.difficulty}, topic: ${p.topic}.${
+      statement ? `\n\nThe statement, as LeetCode shows it:\n${statement.slice(0, 6000)}` : ''
+    }`,
   });
   await sql`
     insert into ai_briefs (slug, brief, model) values (${p.slug}, ${JSON.stringify(value)}::jsonb, ${textModel()})
@@ -130,7 +134,9 @@ const RULES = `You are the interviewer in a live, spoken, 45-minute coding inter
 How you talk:
 - You are speaking out loud. At most two short sentences. Plain spoken English: no markdown, no code, no lists, no symbols like O(n^2) (say "O of n squared").
 - Never reveal the solution, the optimal approach, or anything from your brief beyond what a clarifying question asks. No hints unless the candidate is clearly stuck or asks for one; then give the smallest possible nudge.
-- Answer clarifying questions truthfully and briefly, from your brief or the real LeetCode problem. If something is genuinely unspecified, pick the reasonable assumption and say it.
+- Answer clarifying questions truthfully and briefly, from the statement, your brief, or the real LeetCode problem. If something is genuinely unspecified, pick the reasonable assumption and say it.
+- Never repeat a point you already made (see your earlier lines in the transcript). If they have not reacted to it yet, stay quiet or ask a different question.
+- Answer only what was asked. Do not tack a critique onto an answer to a clarifying question.
 
 What each trigger means:
 - "question": the candidate just asked you something. Answer it.
@@ -172,7 +178,7 @@ export async function turn(
   const r = await loadRound(session, id);
   if (r.finished_at) throw new InterviewerError('finished');
   if ((r.ai_usage?.calls ?? 0) >= AI_LIMITS.turnsPerRound) throw new InterviewerError('ai_limit');
-  const brief = await briefFor(r.problem, Number(r.id));
+  const [brief, statement] = await Promise.all([briefFor(r.problem, Number(r.id)), cachedStatementText(r.slug)]);
   const persona = PERSONAS[r.persona];
   const stage = d.stage === 'review' ? 'test' : d.stage;
   const elapsed = STAGES.reduce((n, s) => n + d.stages[s.id].ms, 0);
@@ -193,7 +199,7 @@ export async function turn(
     maxOutput: 300,
     timeoutMs: AI_LIMITS.replyTimeoutMs,
     // Static for the whole round (rules, persona, brief), so it caches; the moving parts go in input.
-    instructions: `${RULES}\n\nPersona: ${persona.name}. ${persona.ai}\n\nProblem: LeetCode #${r.problem.id} "${r.problem.title}" (${r.problem.difficulty}).\nYour private brief (never reveal it):\n${JSON.stringify(brief)}`,
+    instructions: `${RULES}\n\nPersona: ${persona.name}. ${persona.ai}\n\nProblem: LeetCode #${r.problem.id} "${r.problem.title}" (${r.problem.difficulty}).\n${statement ? `The statement the candidate is reading:\n${statement.slice(0, 6000)}\n` : ''}Your private brief (never reveal it):\n${JSON.stringify(brief)}`,
     input: `State: ${JSON.stringify(state)}\n\nTranscript so far:\n${transcriptText(d, 9000)}\n\nCandidate's notes:\n${notesText(d)}`,
   });
   await addUsage(Number(r.id), usage);

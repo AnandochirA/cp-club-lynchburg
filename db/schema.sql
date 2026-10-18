@@ -220,6 +220,17 @@ create table if not exists ai_briefs (
   created_at  timestamptz not null default now()
 );
 
+-- Problem statements, fetched from LeetCode once and shared by everyone, so
+-- the interview steps can be done on this site. `html` is stored already
+-- sanitized (src/lib/statement-html.ts). `paid`: a Premium problem, whose
+-- statement LeetCode does not give out; read it there.
+create table if not exists problem_statements (
+  slug        text        primary key,
+  html        text,
+  paid        boolean     not null default false,
+  fetched_at  timestamptz not null default now()
+);
+
 -- Behavioral rounds. A member's story bank (STAR: situation, task, action,
 -- result) tagged with the competencies each story covers, and one row per
 -- practice answer: the recognised text of the answer and the follow-up, the

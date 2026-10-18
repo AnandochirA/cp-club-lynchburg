@@ -113,6 +113,22 @@ export async function fetchProfile(
 }
 
 /**
+ * A problem's statement, as LeetCode's HTML. Only the statement: no hints and
+ * no topic tags, which would give a blind round away. Premium problems come
+ * back with no content.
+ */
+export async function fetchStatement(slug: string): Promise<{ html: string | null; paid: boolean } | null> {
+  const out = await gql<{ question: { content: string | null; isPaidOnly: boolean } | null }>(
+    'query($s:String!){question(titleSlug:$s){content isPaidOnly}}',
+    { s: slug },
+  );
+  if (out.errors?.length && !out.data?.question) throw new LeetCodeError('bad_response', out.errors[0].message);
+  const q = out.data?.question;
+  if (!q) return null;
+  return { html: q.content ?? null, paid: !!q.isPaidOnly };
+}
+
+/**
  * The latest Accepted submissions (at most 20), newest first. Note: an unknown
  * account returns [] here rather than an error, so an empty list does NOT prove
  * the account exists. Callers that care must check `fetchProfile`.
