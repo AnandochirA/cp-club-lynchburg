@@ -30,9 +30,10 @@ export function Faq() {
             return (
               <div
                 key={q}
-                className={`reveal border-t border-white/12 transition-colors duration-300 last:border-b ${
-                  isOpen ? 'bg-white/[0.035]' : ''
-                }`}
+                // The open state is a data attribute, not a class: re-rendering the className would
+                // wipe the `is-in` class the reveal observer added, and the row would vanish.
+                data-open={isOpen ? '' : undefined}
+                className="reveal border-t border-white/12 transition-colors duration-300 last:border-b data-[open]:bg-white/[0.035]"
               >
                 <h3 className="m-0">
                   <button
