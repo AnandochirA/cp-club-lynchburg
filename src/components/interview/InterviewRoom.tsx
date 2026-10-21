@@ -275,7 +275,7 @@ export function InterviewRoom({
     toggleMic(false);
     coach(CLOSING, 'prompt');
     // Pull the latest solves first so the AC check can see a submission made a minute ago.
-    // 'too_soon' just means a sync ran recently, which is fine.
+    // 'too_soon' means a sync ran in the last minute; the review's "Check again" picks up anything newer.
     await apiPost('/api/me/sync');
     const d = draftRef.current;
     const done = { ...d, stages: { ...d.stages, [d.stage as StageId]: { ...d.stages[d.stage as StageId], done: true } } };
@@ -304,7 +304,8 @@ export function InterviewRoom({
   async function recheck() {
     if (!record) return;
     const sync = await apiPost('/api/me/sync');
-    if (!sync.ok && sync.error !== 'too_soon') setError(apiErrors[sync.error] ?? apiErrors.server);
+    // Say so when the sync was skipped or failed, so a missing Accepted isn't read as "not solved".
+    if (!sync.ok) setError(apiErrors[sync.error] ?? apiErrors.server);
     const res = await apiPost<{ interview: InterviewRecord }>(`/api/interview/${record.id}`, { action: 'finish' });
     if (res.ok) setRecord(res.data.interview);
   }

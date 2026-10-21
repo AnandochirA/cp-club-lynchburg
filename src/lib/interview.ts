@@ -280,5 +280,10 @@ export async function arenaFor(session: Session): Promise<Arena> {
     pattern: r.pattern,
     metrics: r.metrics,
   }));
-  return { ...arenaSummary(facts, Date.now()), calibration: calibrationTrend(facts) };
+  const acs = (await sql`
+    select slug, ts from ac_events where member_id = ${session.member.id} and revoked_at is null
+  `) as { slug: string; ts: Date | string }[];
+  const solves = new Map<string, number[]>();
+  for (const a of acs) solves.set(a.slug, [...(solves.get(a.slug) ?? []), new Date(a.ts).getTime()]);
+  return { ...arenaSummary(facts, Date.now(), solves), calibration: calibrationTrend(facts) };
 }

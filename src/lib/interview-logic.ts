@@ -361,16 +361,24 @@ export function failedRound(r: RoundFacts): boolean {
 export type RedoItem = { slug: string; dueAt: string; /** 0 or 1: which retry it is on */ box: number; overdue: boolean };
 export type RedoQueue = { due: RedoItem[]; upcoming: RedoItem[]; mastered: number };
 
-export function redoQueue(rounds: RoundFacts[], now: number): RedoQueue {
+/**
+ * `solves` are the member's Accepted times (ms) per slug, from the synced log. A
+ * solve on or after a problem's due time counts as passing that retry, so
+ * redoing it on LeetCode and syncing clears it without a full mock round.
+ */
+export function redoQueue(rounds: RoundFacts[], now: number, solves?: ReadonlyMap<string, number[]>): RedoQueue {
   const state = new Map<string, { box: number; due: number } | 'mastered'>();
-  for (const r of [...rounds].sort((a, b) => a.finishedAt.localeCompare(b.finishedAt))) {
-    const at = new Date(r.finishedAt).getTime();
-    const cur = state.get(r.slug);
-    if (failedRound(r)) {
-      state.set(r.slug, { box: 0, due: at + REDO_DAYS[0] * DAY });
-    } else if (cur && cur !== 'mastered') {
+  type Ev = { at: number; slug: string; round?: RoundFacts };
+  const events: Ev[] = rounds.map((r) => ({ at: new Date(r.finishedAt).getTime(), slug: r.slug, round: r }));
+  for (const [slug, times] of solves ?? []) for (const at of times) events.push({ at, slug });
+  events.sort((a, b) => a.at - b.at);
+  for (const { at, slug, round } of events) {
+    const cur = state.get(slug);
+    if (round && failedRound(round)) {
+      state.set(slug, { box: 0, due: at + REDO_DAYS[0] * DAY });
+    } else if (cur && cur !== 'mastered' && (round || at >= cur.due)) {
       const box = cur.box + 1;
-      state.set(r.slug, box >= REDO_DAYS.length ? 'mastered' : { box, due: at + REDO_DAYS[box] * DAY });
+      state.set(slug, box >= REDO_DAYS.length ? 'mastered' : { box, due: at + REDO_DAYS[box] * DAY });
     }
   }
   const due: RedoItem[] = [];
@@ -399,7 +407,7 @@ const lastN = <T,>(xs: T[], n: number) => xs.slice(-n);
  * recent volume, self-scores, talking, blind pattern calls, and the redo
  * backlog (which counts against you).
  */
-export function readiness(rounds: RoundFacts[], now: number): Readiness {
+export function readiness(rounds: RoundFacts[], now: number, solves?: ReadonlyMap<string, number[]>): Readiness {
   const done = [...rounds].filter((r) => new Date(r.finishedAt).getTime() <= now).sort((a, b) => a.finishedAt.localeCompare(b.finishedAt));
   const recent = done.filter((r) => now - new Date(r.finishedAt).getTime() <= 14 * DAY).length;
   const scoredRounds = lastN(done.filter((r) => scored(r.scores)), 10);
@@ -408,7 +416,7 @@ export function readiness(rounds: RoundFacts[], now: number): Readiness {
   const talk = mic.length ? mic.reduce((n, r) => n + r.talkStats!.talkRatio, 0) / mic.length : 0;
   const blind = lastN(done.filter((r) => r.mode === 'blind'), 10);
   const acc = blind.length ? blind.filter((r) => callMatches(r)).length / blind.length : 0;
-  const backlog = redoQueue(done, now).due.length;
+  const backlog = redoQueue(done, now, solves).due.length;
   const parts: ReadinessPart[] = [
     { key: 'volume', label: 'Rounds, last 14 days', points: (Math.min(recent, 10) / 10) * 25, max: 25 },
     { key: 'score', label: 'Self-scores', points: avg ? ((avg - 1) / 3) * 30 : 0, max: 30 },
@@ -441,7 +449,7 @@ export type Arena = {
   calibration?: { key: ScoreKey; gap: number; rounds: number }[] | null;
 };
 
-export function arenaSummary(rounds: RoundFacts[], now: number): Arena {
+export function arenaSummary(rounds: RoundFacts[], now: number, solves?: ReadonlyMap<string, number[]>): Arena {
   const sorted = [...rounds].sort((a, b) => b.finishedAt.localeCompare(a.finishedAt));
   const weekAgo = now - 7 * DAY;
   const older = sorted.filter((r) => new Date(r.finishedAt).getTime() <= weekAgo);
@@ -454,13 +462,13 @@ export function arenaSummary(rounds: RoundFacts[], now: number): Arena {
     if (failedRound(r)) break;
     streak++;
   }
-  const now_ = readiness(sorted, now);
+  const now_ = readiness(sorted, now, solves);
   return {
     total: sorted.length,
     recent: sorted.slice(0, 6).map((r) => ({ ...r, verdict: verdictOf(r.scores) })),
     readiness: now_,
-    delta: older.length ? now_.score - readiness(older, weekAgo).score : null,
-    redo: redoQueue(sorted, now),
+    delta: older.length ? now_.score - readiness(older, weekAgo, solves).score : null,
+    redo: redoQueue(sorted, now, solves),
     mistakes: [...counts].map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count),
     pattern: { calls: blind.length, hits: blind.filter(callMatches).length },
     averages: sc.length

@@ -89,6 +89,12 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
     setBusy(null);
     if (!res.ok) return setNote(apiErrors[res.error] ?? apiErrors.server);
     setMe(res.data.me);
+    // A fresh solve can clear a redo, so reload the Arena too.
+    void apiGet<{ arena: ArenaData; behavioral: BehavioralDoor }>('/api/interview').then((a) => {
+      if (!a.ok) return;
+      setArena(a.data.arena);
+      setBehavioral(a.data.behavioral);
+    });
 
     const promoted = res.data.outcome.promoted;
     if (promoted.length > 0) {
