@@ -8,6 +8,7 @@ import { ago } from '@/lib/momentum';
 import { Icon } from '../icons';
 import { useNow } from './hooks';
 import { Odometer } from './Odometer';
+import { ReviewButton, submissionsUrl } from './ReviewButton';
 
 const C = interviewCopy.arena;
 const PART_COLOR: Record<string, string> = {
@@ -26,7 +27,18 @@ export type BehavioralDoor = { stories: number; covered: string[]; gaps: string[
  * three ways in (a blind draw, the redo queue, behavioral practice), then
  * what keeps breaking you. Shown even with no rounds yet, as the way to start.
  */
-export function Arena({ arena, behavioral }: { arena: ArenaData | null; behavioral?: BehavioralDoor | null }) {
+export function Arena({
+  arena,
+  behavioral,
+  solved,
+  onReviewed,
+}: {
+  arena: ArenaData | null;
+  behavioral?: BehavioralDoor | null;
+  /** Slugs you have solved: a due redo among them is reviewed, not solved again. */
+  solved?: ReadonlySet<string>;
+  onReviewed?: () => void;
+}) {
   const now = useNow(60_000);
   if (!arena) return <section className="panel arena-skeleton" aria-hidden="true" />;
 
@@ -106,7 +118,7 @@ export function Arena({ arena, behavioral }: { arena: ArenaData | null; behavior
               {due.slice(0, 3).map((d) => {
                 const p = findProblem(d.slug);
                 return (
-                  <li key={d.slug}>
+                  <li key={d.slug} className="flex flex-col gap-1">
                     <Link href={`/interview/${d.slug}?mode=redo`} className="redo-row" data-overdue={d.overdue ? '1' : undefined}>
                       <span className="redo-box font-mono" aria-label={C.boxLabel(d.box)}>
                         {C.boxShort(d.box)}
@@ -115,6 +127,25 @@ export function Arena({ arena, behavioral }: { arena: ArenaData | null; behavior
                       {d.overdue && <span className="font-mono text-[11px] font-bold text-[#FF8FA1] uppercase">{C.overdue}</span>}
                       <Icon name="arrow" size={14} stroke={2.4} />
                     </Link>
+                    {solved?.has(d.slug) && onReviewed && (
+                      <span className="flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
+                        <a
+                          href={submissionsUrl(d.slug)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={interviewCopy.reviewSolution.label(p?.title ?? d.slug)}
+                          className="font-mono text-[12.5px] text-soft hover:text-text"
+                        >
+                          {interviewCopy.reviewSolution.cta}
+                        </a>
+                        <ReviewButton
+                          slug={d.slug}
+                          title={p?.title ?? d.slug}
+                          onDone={onReviewed}
+                          className="font-mono min-h-8 cursor-pointer border border-[#52D68A]/40 bg-[#52D68A]/10 px-2.5 text-[12px] text-[#52D68A] hover:bg-[#52D68A]/20"
+                        />
+                      </span>
+                    )}
                   </li>
                 );
               })}

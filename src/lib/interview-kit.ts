@@ -641,4 +641,12 @@ export const interviewCopy = {
   mockLabel: (title: string) => `Practice ${title} as a mock interview`,
   practice: 'Practice as interview',
   redoPractice: 'Redo as interview (due)',
+  reviewSolution: {
+    cta: 'Review your solution',
+    done: 'Mark reviewed',
+    saving: 'Saving…',
+    note: 'You already solved this. Look over your accepted solution, then mark it reviewed.',
+    label: (title: string) => `Review your solution to ${title} on LeetCode`,
+    markLabel: (title: string) => `Mark ${title} as reviewed`,
+  },
 };

@@ -78,6 +78,15 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
   const quota = me.focus === 'divine' ? 3 : 10;
   const finished = me.placement?.state === 'finished' ? me.placement : null;
 
+  // A due redo you already solved is reviewed, not solved from scratch again.
+  const reviewable = useMemo(() => new Set([...redoDue].filter((slug) => solvedSet.has(slug))), [redoDue, solvedSet]);
+  async function reloadArena() {
+    const a = await apiGet<{ arena: ArenaData; behavioral: BehavioralDoor }>('/api/interview');
+    if (!a.ok) return;
+    setArena(a.data.arena);
+    setBehavioral(a.data.behavioral);
+  }
+
   async function sync() {
     if (busy) return;
     setBusy('sync');
@@ -206,12 +215,14 @@ export function MemberDashboard({ initial }: { initial: MemberView }) {
             left={left.size}
             divineReady={aimingAtDivine && left.size === 0}
             redo={redoDue}
+            review={reviewable}
+            onReviewed={reloadArena}
             onHover={setHl}
           />
         </div>
 
         <div className="dx" style={{ ['--dx' as string]: 6 }}>
-          <Arena arena={arena} behavioral={behavioral} />
+          <Arena arena={arena} behavioral={behavioral} solved={solvedSet} onReviewed={reloadArena} />
         </div>
 
         <div className="dx" style={{ ['--dx' as string]: 7 }}>

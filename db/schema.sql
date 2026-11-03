@@ -252,3 +252,14 @@ create table if not exists behavioral_rounds (
   created_at   timestamptz not null default now()
 );
 create index if not exists behavioral_rounds_member_idx on behavioral_rounds (member_id, created_at desc);
+
+-- "Review your solution": a problem you already solved comes back in the redo
+-- queue; instead of solving it again you can look over your old submission and
+-- mark it reviewed. A review counts like a pass of the current redo box.
+create table if not exists problem_reviews (
+  id           bigserial   primary key,
+  member_id    bigint      not null references members (id) on delete cascade,
+  slug         text        not null,
+  reviewed_at  timestamptz not null default now()
+);
+create index if not exists problem_reviews_member_slug_idx on problem_reviews (member_id, slug);

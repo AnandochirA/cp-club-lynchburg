@@ -6,6 +6,7 @@ import { memberPage as M, rankSection } from '@/lib/content';
 import type { Problem } from '@/lib/curriculum';
 import { interviewCopy as IV } from '@/lib/interview-kit';
 import { Icon } from '../icons';
+import { ReviewButton, submissionsUrl } from './ReviewButton';
 
 const diffColor = (d: string) => rankSection.difficulties.find((x) => x.label === d.toLowerCase())?.color ?? '#55575f';
 
@@ -19,6 +20,8 @@ export function UpNext({
   left,
   divineReady,
   redo,
+  review,
+  onReviewed,
   onHover,
 }: {
   items: Problem[];
@@ -28,6 +31,9 @@ export function UpNext({
   divineReady: boolean;
   /** Slugs due in the redo queue; they lead the list with a ribbon. */
   redo?: ReadonlySet<string>;
+  /** Of those, the ones you already solved: they say "Review your solution" instead of "Solve". */
+  review?: ReadonlySet<string>;
+  onReviewed?: () => void;
   onHover: (slug: string | null) => void;
 }) {
   return (
@@ -57,10 +63,12 @@ export function UpNext({
         </p>
       ) : (
         <ol className="tickets m-0 list-none p-0">
-          {items.map((p, n) => (
+          {items.map((p, n) => {
+            const reviewing = !!review?.has(p.slug);
+            return (
             <li key={p.slug} className="tk-wrap" style={{ ['--n' as string]: n }}>
               <a
-                href={`https://leetcode.com/problems/${p.slug}/`}
+                href={reviewing ? submissionsUrl(p.slug) : `https://leetcode.com/problems/${p.slug}/`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="tk"
@@ -90,9 +98,20 @@ export function UpNext({
                 </span>
                 <span className="tk-cut" aria-hidden="true" />
                 <span className="tk-go">
-                  Solve on LeetCode <Icon name="arrow" size={17} stroke={2.4} className="arrow" />
+                  {reviewing ? IV.reviewSolution.cta : 'Solve on LeetCode'} <Icon name="arrow" size={17} stroke={2.4} className="arrow" />
                 </span>
               </a>
+              {reviewing && !IS_PREVIEW && onReviewed && (
+                <span className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 px-1">
+                  <ReviewButton
+                    slug={p.slug}
+                    title={p.title}
+                    onDone={onReviewed}
+                    className="font-mono min-h-10 cursor-pointer border border-[#52D68A]/40 bg-[#52D68A]/10 px-3 text-[12.5px] text-[#52D68A] hover:bg-[#52D68A]/20"
+                  />
+                  <span className="font-mono text-[12px] text-white/50">{IV.reviewSolution.note}</span>
+                </span>
+              )}
               {!IS_PREVIEW && (
                 <Link
                   href={`/interview/${p.slug}${redo?.has(p.slug) ? '?mode=redo' : ''}`}
@@ -107,7 +126,8 @@ export function UpNext({
                 </Link>
               )}
             </li>
-          ))}
+            );
+          })}
         </ol>
       )}
     </section>

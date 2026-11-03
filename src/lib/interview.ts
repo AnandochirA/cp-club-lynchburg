@@ -285,5 +285,27 @@ export async function arenaFor(session: Session): Promise<Arena> {
   `) as { slug: string; ts: Date | string }[];
   const solves = new Map<string, number[]>();
   for (const a of acs) solves.set(a.slug, [...(solves.get(a.slug) ?? []), new Date(a.ts).getTime()]);
+  // A review of an old solution counts like a solve: it passes the current redo box.
+  const reviews = (await sql`
+    select slug, reviewed_at from problem_reviews where member_id = ${session.member.id}
+  `) as { slug: string; reviewed_at: Date | string }[];
+  for (const r of reviews) solves.set(r.slug, [...(solves.get(r.slug) ?? []), new Date(r.reviewed_at).getTime()]);
   return { ...arenaSummary(facts, Date.now(), solves), calibration: calibrationTrend(facts) };
+}
+
+/**
+ * "Mark reviewed": the member looked over their old solution instead of solving
+ * the problem again. Only allowed for a problem they have solved and that is due
+ * in the redo queue, so it cannot be used to skip ahead.
+ */
+export async function markReviewed(session: Session, slug: string): Promise<void> {
+  if (!findProblem(slug)) throw new InterviewError('bad_problem');
+  const sql = db();
+  const solved = (await sql`
+    select 1 from ac_events where member_id = ${session.member.id} and slug = ${slug} and revoked_at is null limit 1
+  `) as unknown[];
+  if (solved.length === 0) throw new InterviewError('bad_request');
+  const arena = await arenaFor(session);
+  if (!arena.redo.due.some((d) => d.slug === slug)) throw new InterviewError('bad_request');
+  await sql`insert into problem_reviews (member_id, slug) values (${session.member.id}, ${slug})`;
 }
