@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { BehavioralError, listRounds, saveRound } from '@/lib/behavioral';
-import { MAX_ANSWER_CHARS, cleanRound } from '@/lib/behavioral-logic';
+import { MAX_ANSWER_CHARS, cleanRound } from '@/lib/bh/model';
 import { guardPost } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
@@ -19,7 +19,7 @@ export async function GET() {
   }
 }
 
-/** POST { questionId, storyId?, answer[], probe[], durationMs, mic, star }: save a finished answer. */
+/** POST a finished answer (RoundInput); the server computes every metric and check. */
 export async function POST(req: Request) {
   const refused = guardPost(req);
   if (refused) return refused;
@@ -27,7 +27,7 @@ export async function POST(req: Request) {
   if (!session) return NextResponse.json({ error: 'signed_out' }, { status: 401 });
   // Read as text first so an oversized body is refused before parsing.
   const raw = await req.text();
-  if (raw.length > MAX_ANSWER_CHARS * 2 + 4000) return NextResponse.json({ error: 'too_big' }, { status: 413 });
+  if (raw.length > MAX_ANSWER_CHARS * 3 + 8000) return NextResponse.json({ error: 'too_big' }, { status: 413 });
   let parsed: unknown = null;
   try {
     parsed = JSON.parse(raw);

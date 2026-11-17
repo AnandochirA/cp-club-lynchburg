@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { BehavioralError, listStories, saveStory } from '@/lib/behavioral';
-import { cleanStory } from '@/lib/behavioral-logic';
+import { cleanStory } from '@/lib/bh/story';
 import { guardPost, readJson } from '@/lib/request';
 import { getSession } from '@/lib/session';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const STATUS = { story_limit: 409, round_limit: 429, bad_question: 400, not_found: 404 } as const;
+const STATUS = { story_limit: 409, round_limit: 429, drill_limit: 429, debrief_limit: 409, bad_question: 400, not_found: 404 } as const;
 
 /** GET: my story bank. */
 export async function GET() {
@@ -21,7 +21,7 @@ export async function GET() {
   }
 }
 
-/** POST { id?, title, situation, task, action, result, tags }: create a story, or update one of mine. */
+/** POST { id?, ...story }: create a CARL story, or update one of mine. */
 export async function POST(req: Request) {
   const refused = guardPost(req);
   if (refused) return refused;

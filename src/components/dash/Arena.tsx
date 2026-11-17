@@ -20,7 +20,7 @@ const PART_COLOR: Record<string, string> = {
 };
 
 /** Optional behavioral summary; the door only shows once there is one. */
-export type BehavioralDoor = { stories: number; covered: string[]; gaps: string[]; rounds: number };
+export type BehavioralDoor = { stories: number; covered: string[]; gaps: string[]; rounds: number; readiness: number; next: string | null };
 
 /**
  * The Arena: interview readiness, built from five visible parts, then the
@@ -170,10 +170,10 @@ export function Arena({
               ))}
             </span>
             <span className="door-sub">
-              {behavioral.gaps.length > 0 ? C.gap(behavioral.gaps[0]) : C.allCovered}
+              {behavioral.next ? C.behavNext(behavioral.next) : behavioral.gaps.length > 0 ? C.gap(behavioral.gaps[0]) : C.allCovered}
             </span>
             <span className="door-foot font-mono">
-              {C.stories(behavioral.stories)} · {C.behavRounds(behavioral.rounds)}
+              {C.ready(behavioral.readiness)} · {C.stories(behavioral.stories)} · {C.behavRounds(behavioral.rounds)}
               <Icon name="arrow" size={16} stroke={2.4} className="arrow" />
             </span>
           </Link>

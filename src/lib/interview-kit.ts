@@ -567,9 +567,11 @@ export const interviewCopy = {
     waiting: (n: number) => `${n} waiting`,
     behavKicker: 'The other round',
     behavTitle: 'Behavioral',
-    coverage: (n: number, of: number) => `${n} of ${of} competencies have a story`,
+    coverage: (n: number, of: number) => `${n} of ${of} signal areas have a story`,
     gap: (c: string) => `Gap: no story for ${c.toLowerCase()} yet.`,
-    allCovered: 'Every competency has a story. Keep them sharp.',
+    allCovered: 'Every signal area has a story. Keep them sharp.',
+    behavNext: (step: string) => `Next: ${step.toLowerCase()}.`,
+    ready: (n: number) => `${n}% ready`,
     stories: (n: number) => `${n} ${n === 1 ? 'story' : 'stories'}`,
     behavRounds: (n: number) => `${n} ${n === 1 ? 'round' : 'rounds'}`,
     empty:

@@ -309,7 +309,7 @@ export const loop = {
     {
       tag: 'Behavioral',
       title: 'Tell me about a time…',
-      body: 'Timed behavioral rounds with follow-up probes, and a story bank so your best STAR stories are ready before you need them.',
+      body: 'A story catalog checked by a Story Doctor, drills for spotting what a question scores and picking the right story fast, and timed rounds with follow-ups aimed at your weak spots.',
     },
     {
       tag: 'Study rooms',

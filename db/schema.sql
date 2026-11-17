@@ -253,6 +253,104 @@ create table if not exists behavioral_rounds (
 );
 create index if not exists behavioral_rounds_member_idx on behavioral_rounds (member_id, created_at desc);
 
+-- Behavioral prep, rebuilt on "Mastering Behavioral Interviews" (McDonald):
+-- stories become CARL (context, actions, results, learnings) tagged with the
+-- eight signal areas, plus the scaffolding prepared around them. The old STAR
+-- columns stay so nothing is lost; each old story is copied across once.
+alter table stories add column if not exists setting    text    not null default '';
+alter table stories add column if not exists source     text    not null default 'school';
+alter table stories add column if not exists happened   text    not null default '';
+alter table stories add column if not exists tier       text    not null default 'supporting';
+alter table stories add column if not exists signals    text[]  not null default '{}';
+alter table stories add column if not exists context    jsonb   not null default '{}'::jsonb;
+alter table stories add column if not exists actions    jsonb   not null default '[]'::jsonb;
+alter table stories add column if not exists results    jsonb   not null default '[]'::jsonb;
+alter table stories add column if not exists learnings  jsonb   not null default '[]'::jsonb;
+alter table stories add column if not exists scale      jsonb   not null default '{}'::jsonb;
+alter table stories add column if not exists toc        jsonb   not null default '[]'::jsonb;
+alter table stories add column if not exists toc_order  text    not null default 'theme';
+alter table stories add column if not exists followups  jsonb   not null default '[]'::jsonb;
+alter table stories add column if not exists recuts     jsonb   not null default '{}'::jsonb;
+alter table stories add column if not exists defense    jsonb   not null default '{}'::jsonb;
+alter table stories add column if not exists todos      jsonb   not null default '[]'::jsonb;
+alter table stories add column if not exists carl       boolean not null default false;
+
+-- One-time copy of STAR stories into CARL. New stories are saved with carl = true.
+update stories set
+  context = jsonb_build_object('told', btrim(situation || ' ' || task), 'stakes', '', 'constraints', '', 'people', '', 'alternatives', ''),
+  actions = case when action <> '' then jsonb_build_array(jsonb_build_object('text', action, 'theme', '')) else '[]'::jsonb end,
+  results = case when result <> '' then jsonb_build_array(jsonb_build_object('text', result, 'kind', 'other')) else '[]'::jsonb end,
+  signals = coalesce((
+    select array_agg(distinct m) from (
+      select case t
+        when 'conflict' then 'conflict' when 'failure' then 'growth' when 'learning' then 'growth'
+        when 'impact' then 'scope' when 'pressure' then 'perseverance' when 'leadership' then 'leadership'
+        when 'ambiguity' then 'ambiguity' end as m
+      from unnest(tags) as t
+    ) x where m is not null
+  ), '{}'),
+  carl = true
+where carl = false;
+
+alter table behavioral_rounds add column if not exists kind       text    not null default 'question';
+alter table behavioral_rounds add column if not exists qtype      text    not null default 'time';
+alter table behavioral_rounds add column if not exists beats      jsonb   not null default '[]'::jsonb;
+alter table behavioral_rounds add column if not exists selection  jsonb;
+alter table behavioral_rounds add column if not exists decode     jsonb;
+alter table behavioral_rounds add column if not exists clarifiers jsonb   not null default '{}'::jsonb;
+alter table behavioral_rounds add column if not exists persona    text    not null default 'none';
+alter table behavioral_rounds add column if not exists loop_id    text    not null default '';
+alter table behavioral_rounds add column if not exists script     text    not null default '';
+alter table behavioral_rounds add column if not exists checks     jsonb   not null default '[]'::jsonb;
+alter table behavioral_rounds add column if not exists score      int     not null default 0;
+alter table behavioral_rounds add column if not exists good       boolean not null default false;
+create index if not exists behavioral_rounds_story_idx on behavioral_rounds (member_id, story_id) where story_id is not null;
+
+-- One row per member: target level and company, Big Three picks, the
+-- Tell-me-about-yourself draft, and the questions they plan to ask.
+create table if not exists bh_profile (
+  member_id     bigint      primary key references members (id) on delete cascade,
+  level         text        not null default 'L3',
+  company_kind  text        not null default 'bigtech',
+  company       text        not null default '',
+  vals          jsonb       not null default '[]'::jsonb,
+  hurry         boolean     not null default false,
+  big3          jsonb       not null default '{}'::jsonb,
+  tmay          jsonb       not null default '{}'::jsonb,
+  asks          jsonb       not null default '[]'::jsonb,
+  updated_at    timestamptz not null default now()
+);
+
+-- Quick drills: spotting a question's signal areas, and picking a story fast.
+create table if not exists bh_drills (
+  id           bigserial   primary key,
+  member_id    bigint      not null references members (id) on delete cascade,
+  kind         text        not null,
+  question_id  text        not null,
+  correct      boolean     not null default false,
+  ms           int         not null default 0,
+  detail       jsonb       not null default '{}'::jsonb,
+  created_at   timestamptz not null default now()
+);
+create index if not exists bh_drills_member_idx on bh_drills (member_id, kind, created_at desc);
+
+-- After a real interview: what was asked, which story, how the follow-ups went.
+create table if not exists bh_debriefs (
+  id            bigserial   primary key,
+  member_id     bigint      not null references members (id) on delete cascade,
+  company       text        not null default '',
+  round_kind    text        not null default '',
+  happened      text        not null default '',
+  questions     jsonb       not null default '[]'::jsonb,
+  engagement    text        not null default 'neutral',
+  stories_told  int         not null default 0,
+  rushed        boolean     not null default false,
+  early         boolean     not null default false,
+  notes         text        not null default '',
+  created_at    timestamptz not null default now()
+);
+create index if not exists bh_debriefs_member_idx on bh_debriefs (member_id, created_at desc);
+
 -- "Review your solution": a problem you already solved comes back in the redo
 -- queue; instead of solving it again you can look over your old submission and
 -- mark it reviewed. A review counts like a pass of the current redo box.
